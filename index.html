@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buzz Arcade Quiz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+  <div class="scanlines"></div>
+  
+  <div class="game-container">
+    <!-- Top HUD -->
+    <header class="hud">
+      <!-- Player 1 Score -->
+      <div class="player-score">
+        <div class="player-label">PLAYER 1</div>
+        <div class="score-value" id="player1-score">0</div>
+        <div class="lives">
+          <span class="heart">♥</span>
+          <span class="heart">♥</span>
+          <span class="heart">♥</span>
+        </div>
+      </div>
+
+      <!-- Question Counter -->
+      <div class="question-counter">
+        <div class="counter-box" id="question-number">01</div>
+      </div>
+
+      <!-- Hi-Score -->
+      <div class="hi-score">
+        <div class="hi-label">HI-SCORE</div>
+        <div class="hi-value" id="hi-score">0</div>
+        <div class="combo" id="combo">COMBO x1</div>
+      </div>
+    </header>
+
+    <!-- Question Display Area -->
+    <main class="question-area">
+      <div class="question-badge">QUESTION <span id="q-current">01</span>/<span id="q-total">10</span></div>
+      <div class="question-box">
+        <p class="question-text" id="question-text">What was the most popular arcade game of 1982?</p>
+        <div class="question-indicators">
+          <span class="indicator active"></span>
+          <span class="indicator"></span>
+        </div>
+      </div>
+
+      <!-- Answer Buttons - Matching Buzz Controller Layout -->
+      <!-- Layout: Blue (top-left), Orange (top-right), Green (bottom-left), Yellow (bottom-right) -->
+      <div class="answers-grid">
+        <button class="answer-btn blue" data-color="blue">
+          <span class="btn-icon">▲</span>
+          <span class="btn-text" id="answer-blue">Pac-Man</span>
+        </button>
+        <button class="answer-btn orange" data-color="orange">
+          <span class="btn-icon">■</span>
+          <span class="btn-text" id="answer-orange">Donkey Kong</span>
+        </button>
+        <button class="answer-btn green" data-color="green">
+          <span class="btn-icon">●</span>
+          <span class="btn-text" id="answer-green">Space Invaders</span>
+          <span class="selected-badge">SELECTED</span>
+        </button>
+        <button class="answer-btn yellow" data-color="yellow">
+          <span class="btn-icon">✕</span>
+          <span class="btn-text" id="answer-yellow">Galaga</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- Bottom HUD -->
+    <footer class="bottom-hud">
+      <!-- Timer -->
+      <div class="timer-box">
+        <div class="timer-label">TIME LEFT</div>
+        <div class="timer-display">
+          <span class="timer-icon">⏱</span>
+          <span class="timer-value" id="timer">0:45</span>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button class="submit-btn" id="submit-btn">
+        SUBMIT <span class="bolt">⚡</span>
+      </button>
+
+      <!-- Power-ups -->
+      <div class="powerups">
+        <button class="powerup-btn hint" id="hint-btn" title="Hint">💡</button>
+        <button class="powerup-btn skip" id="skip-btn" title="Skip">⏭</button>
+      </div>
+
+      <!-- Player indicators -->
+      <div class="player-indicators">
+        <span class="player-dot p1"></span>
+        <span class="player-dot p2"></span>
+        <span class="player-dot p3"></span>
+        <span class="player-dot p4"></span>
+      </div>
+
+      <!-- Insert Coin Prompt -->
+      <div class="insert-coin">
+        <div class="press-start">PRESS START</div>
+        <div class="coin-text">▶ INSERT COIN</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Gamepad Status (Debug) -->
+  <div class="gamepad-status" id="gamepad-status">
+    🎮 No controller detected
+  </div>
+
+  <script src="modules/gamepad-manager.js"></script>
+  <script src="modules/quiz-engine.js"></script>
+  <script src="modules/game-state.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

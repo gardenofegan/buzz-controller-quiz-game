@@ -1,0 +1,509 @@
+/* =====================================================
+   BUZZ ARCADE QUIZ - MAIN STYLES
+   Retro arcade aesthetic with neon effects
+   ===================================================== */
+
+/* CSS Custom Properties - Color Palette */
+:root {
+  /* Background gradient */
+  --bg-cyan: #00d4ff;
+  --bg-lime: #c8ff00;
+
+  /* Buzz Controller Button Colors (authentic) */
+  --buzz-blue: #0066ff;
+  --buzz-orange: #ff6600;
+  --buzz-green: #00cc44;
+  --buzz-yellow: #ffcc00;
+  --buzz-red: #ff0033;
+
+  /* UI Colors */
+  --purple-dark: #4a1a6b;
+  --purple-light: #8b2fc9;
+  --pink-hot: #ff00aa;
+  --cyan-glow: #00ffff;
+  --orange-warm: #ff8844;
+
+  /* Text */
+  --text-primary: #ffffff;
+  --text-shadow: #000000;
+
+  /* Sizes */
+  --font-xs: 0.75rem;
+  --font-sm: 1rem;
+  --font-md: 1.5rem;
+  --font-lg: 2rem;
+  --font-xl: 3rem;
+}
+
+/* Reset & Base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Press Start 2P', monospace;
+  background: linear-gradient(180deg, var(--bg-cyan) 0%, var(--bg-lime) 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* CRT Scanline Overlay */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  background: repeating-linear-gradient(0deg,
+      rgba(0, 0, 0, 0.1) 0px,
+      rgba(0, 0, 0, 0.1) 1px,
+      transparent 1px,
+      transparent 3px);
+}
+
+/* Main Game Container */
+.game-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 1.5rem 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* =====================================================
+   TOP HUD - Scores & Question Counter
+   ===================================================== */
+.hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+/* Player Score Box */
+.player-score {
+  background: rgba(0, 0, 0, 0.85);
+  border: 3px solid #333;
+  padding: 0.75rem 1.25rem;
+  min-width: 180px;
+}
+
+.player-label {
+  font-size: var(--font-xs);
+  color: #888;
+  margin-bottom: 0.25rem;
+}
+
+.score-value {
+  font-size: var(--font-lg);
+  color: var(--cyan-glow);
+  text-shadow: 0 0 10px var(--cyan-glow);
+}
+
+.lives {
+  margin-top: 0.5rem;
+}
+
+.heart {
+  color: var(--buzz-red);
+  font-size: var(--font-sm);
+  margin-right: 0.25rem;
+  text-shadow: 0 0 5px var(--buzz-red);
+}
+
+/* Question Counter */
+.question-counter {
+  position: relative;
+}
+
+.counter-box {
+  background: rgba(0, 0, 0, 0.85);
+  border: 4px solid #444;
+  font-size: var(--font-xl);
+  padding: 0.5rem 1.5rem;
+  color: var(--text-primary);
+}
+
+/* Hi-Score */
+.hi-score {
+  background: rgba(0, 0, 0, 0.85);
+  border: 3px solid #333;
+  padding: 0.75rem 1.25rem;
+  text-align: right;
+  min-width: 180px;
+}
+
+.hi-label {
+  font-size: var(--font-xs);
+  color: #888;
+}
+
+.hi-value {
+  font-size: var(--font-lg);
+  color: var(--pink-hot);
+  text-shadow: 0 0 10px var(--pink-hot);
+}
+
+.combo {
+  font-size: var(--font-xs);
+  color: var(--orange-warm);
+  margin-top: 0.25rem;
+}
+
+/* =====================================================
+   QUESTION AREA
+   ===================================================== */
+.question-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 2rem;
+}
+
+.question-badge {
+  background: var(--purple-light);
+  color: var(--text-primary);
+  font-size: var(--font-xs);
+  padding: 0.5rem 1rem;
+  border-radius: 4px 4px 0 0;
+  transform: translateY(3px);
+}
+
+.question-box {
+  background: linear-gradient(180deg, var(--purple-dark) 0%, var(--purple-light) 100%);
+  border: 4px solid var(--purple-light);
+  padding: 2rem 3rem;
+  width: 100%;
+  max-width: 900px;
+  text-align: center;
+  position: relative;
+}
+
+.question-text {
+  font-size: var(--font-md);
+  line-height: 1.6;
+  text-shadow: 2px 2px 0 var(--text-shadow);
+}
+
+.question-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.indicator {
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.indicator.active {
+  background: var(--text-primary);
+}
+
+/* =====================================================
+   ANSWER BUTTONS - Buzz Controller Colors
+   ===================================================== */
+.answers-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 600px;
+  margin-top: 1.5rem;
+}
+
+.answer-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border: none;
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-align: left;
+  min-height: 70px;
+}
+
+.answer-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.btn-icon {
+  font-size: 1.25rem;
+  opacity: 0.8;
+}
+
+.btn-text {
+  flex: 1;
+}
+
+/* Buzz Controller Colors - Matching actual Buzz 2 controller */
+.answer-btn.blue {
+  background: linear-gradient(90deg, #0055dd 0%, #0077ff 100%);
+  box-shadow: 0 4px 0 #003399, 0 0 20px rgba(0, 102, 255, 0.4);
+}
+
+.answer-btn.orange {
+  background: linear-gradient(90deg, #cc5500 0%, #ff6600 100%);
+  box-shadow: 0 4px 0 #993300, 0 0 20px rgba(255, 102, 0, 0.4);
+}
+
+.answer-btn.green {
+  background: linear-gradient(90deg, #009933 0%, #00cc44 100%);
+  box-shadow: 0 4px 0 #006622, 0 0 20px rgba(0, 204, 68, 0.4);
+}
+
+.answer-btn.yellow {
+  background: linear-gradient(90deg, #ccaa00 0%, #ffcc00 100%);
+  box-shadow: 0 4px 0 #997700, 0 0 20px rgba(255, 204, 0, 0.4);
+}
+
+/* Hover & Active States */
+.answer-btn:hover {
+  transform: translateY(-2px);
+}
+
+.answer-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #333;
+}
+
+/* Selected State */
+.answer-btn.selected {
+  animation: shake 0.3s ease-in-out;
+}
+
+.selected-badge {
+  position: absolute;
+  right: 0.5rem;
+  top: -0.5rem;
+  background: var(--text-primary);
+  color: #333;
+  font-size: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  display: none;
+}
+
+.answer-btn.selected .selected-badge {
+  display: block;
+}
+
+/* Star indicator for selected */
+.answer-btn.selected::after {
+  content: '★';
+  position: absolute;
+  right: 1rem;
+  font-size: 1.5rem;
+  color: var(--buzz-yellow);
+  text-shadow: 0 0 10px var(--buzz-yellow);
+}
+
+/* =====================================================
+   BOTTOM HUD
+   ===================================================== */
+.bottom-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1.5rem;
+  margin-top: auto;
+}
+
+/* Timer */
+.timer-box {
+  background: rgba(0, 0, 0, 0.85);
+  border: 3px solid #333;
+  padding: 0.5rem 1rem;
+  min-width: 150px;
+}
+
+.timer-label {
+  font-size: 0.6rem;
+  color: #888;
+  margin-bottom: 0.25rem;
+}
+
+.timer-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timer-icon {
+  color: var(--buzz-red);
+}
+
+.timer-value {
+  font-size: var(--font-lg);
+  color: var(--buzz-red);
+  text-shadow: 0 0 10px var(--buzz-red);
+}
+
+/* Submit Button */
+.submit-btn {
+  background: linear-gradient(180deg, #ffbb00 0%, #ff9900 100%);
+  border: none;
+  border-radius: 50px;
+  padding: 1rem 3rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--font-sm);
+  color: #333;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #cc7700;
+  transition: transform 0.1s;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+}
+
+.submit-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #cc7700;
+}
+
+.bolt {
+  margin-left: 0.5rem;
+}
+
+/* Power-ups */
+.powerups {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.powerup-btn {
+  width: 50px;
+  height: 50px;
+  border: 3px solid #444;
+  background: rgba(0, 0, 0, 0.85);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.powerup-btn:hover {
+  background: rgba(50, 50, 50, 0.85);
+}
+
+/* Player Indicators */
+.player-indicators {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.player-dot {
+  width: 24px;
+  height: 24px;
+  border: 2px solid currentColor;
+  opacity: 0.3;
+}
+
+.player-dot.active {
+  opacity: 1;
+  animation: pulse 1s infinite;
+}
+
+.player-dot.p1 {
+  color: var(--buzz-blue);
+  background: var(--buzz-blue);
+}
+
+.player-dot.p2 {
+  color: var(--buzz-orange);
+  background: var(--buzz-orange);
+}
+
+.player-dot.p3 {
+  color: var(--buzz-green);
+  background: var(--buzz-green);
+}
+
+.player-dot.p4 {
+  color: var(--buzz-yellow);
+  background: var(--buzz-yellow);
+}
+
+/* Insert Coin */
+.insert-coin {
+  background: rgba(0, 0, 0, 0.85);
+  border: 3px solid #333;
+  padding: 0.5rem 1rem;
+  text-align: center;
+}
+
+.press-start {
+  font-size: var(--font-xs);
+  color: #888;
+}
+
+.coin-text {
+  font-size: var(--font-xs);
+  color: var(--cyan-glow);
+  animation: blink 1s infinite;
+}
+
+/* =====================================================
+   GAMEPAD STATUS (Debug)
+   ===================================================== */
+.gamepad-status {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  color: #888;
+  font-size: 0.6rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  z-index: 100;
+}
+
+.gamepad-status.connected {
+  color: var(--buzz-green);
+}
+
+/* =====================================================
+   RESPONSIVE ADJUSTMENTS FOR TV
+   ===================================================== */
+@media (min-width: 1920px) {
+  :root {
+    --font-xs: 1rem;
+    --font-sm: 1.25rem;
+    --font-md: 2rem;
+    --font-lg: 2.5rem;
+    --font-xl: 4rem;
+  }
+
+  .game-container {
+    padding: 2rem 4rem;
+  }
+}

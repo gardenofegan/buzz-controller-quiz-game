@@ -1,0 +1,125 @@
+{
+    "quizTitle": "Retro Arcade Trivia",
+    "questions": [
+        {
+            "id": 1,
+            "question": "What was the most popular arcade game of 1982?",
+            "answers": {
+                "blue": "Pac-Man",
+                "orange": "Donkey Kong",
+                "green": "Space Invaders",
+                "yellow": "Galaga"
+            },
+            "correct": "blue",
+            "points": 100
+        },
+        {
+            "id": 2,
+            "question": "Which company created the NES (Nintendo Entertainment System)?",
+            "answers": {
+                "blue": "Sega",
+                "orange": "Atari",
+                "green": "Nintendo",
+                "yellow": "Sony"
+            },
+            "correct": "green",
+            "points": 100
+        },
+        {
+            "id": 3,
+            "question": "What is the capital of Indiana?",
+            "answers": {
+                "blue": "Indianapolis",
+                "orange": "Lawrenceburg",
+                "green": "Bloomington",
+                "yellow": "Fort Wayne"
+            },
+            "correct": "blue",
+            "points": 100
+        },
+        {
+            "id": 4,
+            "question": "In what year was the first Star Wars movie released?",
+            "answers": {
+                "blue": "1975",
+                "orange": "1977",
+                "green": "1979",
+                "yellow": "1980"
+            },
+            "correct": "orange",
+            "points": 100
+        },
+        {
+            "id": 5,
+            "question": "What is the highest-grossing arcade game of all time?",
+            "answers": {
+                "blue": "Street Fighter II",
+                "orange": "Space Invaders",
+                "green": "Pac-Man",
+                "yellow": "Donkey Kong"
+            },
+            "correct": "green",
+            "points": 150
+        },
+        {
+            "id": 6,
+            "question": "Which planet is known as the Red Planet?",
+            "answers": {
+                "blue": "Venus",
+                "orange": "Mars",
+                "green": "Jupiter",
+                "yellow": "Saturn"
+            },
+            "correct": "orange",
+            "points": 100
+        },
+        {
+            "id": 7,
+            "question": "What does CPU stand for?",
+            "answers": {
+                "blue": "Central Processing Unit",
+                "orange": "Computer Personal Unit",
+                "green": "Central Program Utility",
+                "yellow": "Core Processing Unit"
+            },
+            "correct": "blue",
+            "points": 100
+        },
+        {
+            "id": 8,
+            "question": "Who painted the Mona Lisa?",
+            "answers": {
+                "blue": "Vincent van Gogh",
+                "orange": "Pablo Picasso",
+                "green": "Michelangelo",
+                "yellow": "Leonardo da Vinci"
+            },
+            "correct": "yellow",
+            "points": 100
+        },
+        {
+            "id": 9,
+            "question": "What year did the Atari 2600 launch in North America?",
+            "answers": {
+                "blue": "1975",
+                "orange": "1977",
+                "green": "1979",
+                "yellow": "1980"
+            },
+            "correct": "orange",
+            "points": 150
+        },
+        {
+            "id": 10,
+            "question": "Which chemical element has the symbol 'O'?",
+            "answers": {
+                "blue": "Gold",
+                "orange": "Oxygen",
+                "green": "Osmium",
+                "yellow": "Oganesson"
+            },
+            "correct": "orange",
+            "points": 100
+        }
+    ]
+}
