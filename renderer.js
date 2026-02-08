@@ -1,19 +1,14 @@
 /**
  * Main Renderer - UI Controller
  * Handles DOM updates, user interactions, and coordinates modules
+ * Supports up to 4 players with buzz-in racing
  */
 
 class GameRenderer {
     constructor() {
         // DOM Elements
         this.elements = {
-            // Scores
-            player1Score: document.getElementById('player1-score'),
-            hiScore: document.getElementById('hi-score'),
-            combo: document.getElementById('combo'),
-
             // Question
-            questionNumber: document.getElementById('question-number'),
             qCurrent: document.getElementById('q-current'),
             qTotal: document.getElementById('q-total'),
             questionText: document.getElementById('question-text'),
@@ -27,10 +22,14 @@ class GameRenderer {
             // Timer
             timer: document.getElementById('timer'),
 
+            // First buzz banner
+            firstBuzzBanner: document.getElementById('first-buzz-banner'),
+            firstBuzzText: document.getElementById('first-buzz-text'),
+
+            // Lock-in status
+            lockinStatus: document.getElementById('lockin-status'),
+
             // Buttons
-            submitBtn: document.getElementById('submit-btn'),
-            hintBtn: document.getElementById('hint-btn'),
-            skipBtn: document.getElementById('skip-btn'),
             playAgainBtn: document.getElementById('play-again-btn'),
 
             // Screens
@@ -38,14 +37,46 @@ class GameRenderer {
             gameOverScreen: document.getElementById('game-over-screen'),
             gameContainer: document.querySelector('.game-container'),
 
-            // Game over stats
-            finalScore: document.getElementById('final-score'),
+            // Game over
+            finalScores: document.getElementById('final-scores'),
             statQuestions: document.getElementById('stat-questions'),
             statCorrect: document.getElementById('stat-correct'),
             statCombo: document.getElementById('stat-combo')
         };
 
-        // Player slot elements
+        // Player score boxes
+        this.scoreBoxes = {
+            player1: document.getElementById('scorebox-p1'),
+            player2: document.getElementById('scorebox-p2'),
+            player3: document.getElementById('scorebox-p3'),
+            player4: document.getElementById('scorebox-p4')
+        };
+
+        // Player score displays
+        this.scoreDisplays = {
+            player1: document.getElementById('score-p1'),
+            player2: document.getElementById('score-p2'),
+            player3: document.getElementById('score-p3'),
+            player4: document.getElementById('score-p4')
+        };
+
+        // Player status displays
+        this.statusDisplays = {
+            player1: document.getElementById('status-p1'),
+            player2: document.getElementById('status-p2'),
+            player3: document.getElementById('status-p3'),
+            player4: document.getElementById('status-p4')
+        };
+
+        // Lock-in dots
+        this.lockinDots = {
+            player1: document.getElementById('lockin-p1'),
+            player2: document.getElementById('lockin-p2'),
+            player3: document.getElementById('lockin-p3'),
+            player4: document.getElementById('lockin-p4')
+        };
+
+        // Player slot elements (lobby)
         this.playerSlots = {
             player1: document.getElementById('slot-p1'),
             player2: document.getElementById('slot-p2'),
@@ -56,8 +87,13 @@ class GameRenderer {
         // Answer button elements
         this.answerButtons = document.querySelectorAll('.answer-btn');
 
-        // Current selection
-        this.selectedAnswer = null;
+        // Player indicator containers on answer buttons
+        this.playerIndicatorRows = {
+            blue: document.querySelector('.player-indicators-row[data-color="blue"]'),
+            orange: document.querySelector('.player-indicators-row[data-color="orange"]'),
+            green: document.querySelector('.player-indicators-row[data-color="green"]'),
+            yellow: document.querySelector('.player-indicators-row[data-color="yellow"]')
+        };
 
         // Game stats
         this.stats = {
@@ -67,12 +103,15 @@ class GameRenderer {
         };
 
         // Current screen state
-        this.currentScreen = 'lobby'; // 'lobby', 'game', 'gameOver'
+        this.currentScreen = 'lobby';
 
-        // Start sequence tracking (Blue → Orange → Green → Yellow)
+        // Start sequence tracking
         this.startSequence = [];
         this.requiredSequence = ['blue', 'orange', 'green', 'yellow'];
         this.sequenceTimeout = null;
+
+        // Current question data
+        this.currentQuestion = null;
 
         this.init();
     }
@@ -80,13 +119,11 @@ class GameRenderer {
     async init() {
         console.log('[Renderer] Initializing...');
 
-        // Set up event listeners
         this.setupButtonListeners();
         this.setupKeyboardListeners();
         this.setupGameStateListeners();
         this.setupGamepadListeners();
 
-        // Load quiz
         try {
             await window.quizEngine.load('quiz.json');
         } catch (error) {
@@ -94,22 +131,15 @@ class GameRenderer {
             this.useSampleData();
         }
 
-        // Update initial UI
-        this.updateHiScore();
-
-        // Show lobby screen
         this.showScreen('lobby');
-
         console.log('[Renderer] Ready!');
     }
 
-    /**
-     * Show a specific screen
-     */
+    // ==================== SCREEN MANAGEMENT ====================
+
     showScreen(screen) {
         this.currentScreen = screen;
 
-        // Hide all screens first
         this.elements.lobbyScreen.classList.add('hidden');
         this.elements.gameOverScreen.classList.add('hidden');
         this.elements.gameContainer.style.display = 'none';
@@ -120,6 +150,7 @@ class GameRenderer {
                 break;
             case 'game':
                 this.elements.gameContainer.style.display = 'flex';
+                this.updateScoreboardVisibility();
                 break;
             case 'gameOver':
                 this.elements.gameOverScreen.classList.remove('hidden');
@@ -127,41 +158,36 @@ class GameRenderer {
         }
     }
 
-    /**
-     * Start the game
-     */
+    // ==================== GAME FLOW ====================
+
     startGame() {
         console.log('[Renderer] Starting game...');
 
-        // Reset stats
         this.stats = {
             correctAnswers: 0,
             totalQuestions: window.quizEngine.totalQuestions,
             bestCombo: 0
         };
 
-        // Reset quiz
         window.quizEngine.reset();
         window.gameState.resetGame();
 
-        // Auto-join player 1 for single player
-        window.gameState.playerJoin('player1');
+        // Re-join all players that were in lobby
+        Object.entries(this.playerSlots).forEach(([key, slot]) => {
+            if (slot.classList.contains('joined')) {
+                window.gameState.playerJoin(key);
+            }
+        });
 
-        // Show game screen
         this.showScreen('game');
-
-        // Display first question
         this.displayQuestion(window.quizEngine.getCurrentQuestion());
         this.updateProgress();
-        this.updateScore();
+        this.updateAllScores();
+        this.hideFirstBuzzBanner();
 
-        // Start the game
         window.gameState.setState(window.gameState.STATES.QUESTION_REVEAL);
     }
 
-    /**
-     * Player join in lobby
-     */
     playerJoin(playerKey) {
         if (this.currentScreen !== 'lobby') return;
 
@@ -169,54 +195,39 @@ class GameRenderer {
         if (slot && !slot.classList.contains('joined')) {
             slot.classList.add('joined');
             slot.querySelector('.slot-status').textContent = 'READY!';
-
-            window.gameState.playerJoin(playerKey);
             console.log(`[Renderer] ${playerKey} joined!`);
+            this.updateSequenceDisplay();
         }
     }
 
-    /**
-     * Handle start sequence in lobby
-     * Requires pressing Blue → Orange → Green → Yellow to start
-     */
+    // ==================== START SEQUENCE ====================
+
     handleStartSequence(color) {
         if (this.currentScreen !== 'lobby') return;
 
-        // Check if at least one player has joined
         const joinedCount = document.querySelectorAll('.player-slot.joined').length;
         if (joinedCount === 0) {
             console.log('[Renderer] No players joined yet!');
             return;
         }
 
-        // Add to sequence
         this.startSequence.push(color);
         console.log(`[Renderer] Start sequence: ${this.startSequence.join(' → ')}`);
-
-        // Update visual feedback
         this.updateSequenceDisplay();
 
-        // Clear sequence after timeout (2 seconds of inactivity)
-        if (this.sequenceTimeout) {
-            clearTimeout(this.sequenceTimeout);
-        }
+        if (this.sequenceTimeout) clearTimeout(this.sequenceTimeout);
         this.sequenceTimeout = setTimeout(() => {
             this.startSequence = [];
             this.updateSequenceDisplay();
         }, 2000);
 
-        // Check if sequence matches
-        const currentLength = this.startSequence.length;
-        const expectedColor = this.requiredSequence[currentLength - 1];
-
+        const expectedColor = this.requiredSequence[this.startSequence.length - 1];
         if (color !== expectedColor) {
-            // Wrong color, reset sequence
             this.startSequence = [];
             this.updateSequenceDisplay();
             return;
         }
 
-        // Check if complete
         if (this.startSequence.length === this.requiredSequence.length) {
             console.log('[Renderer] Start sequence complete!');
             this.startSequence = [];
@@ -224,9 +235,6 @@ class GameRenderer {
         }
     }
 
-    /**
-     * Update visual display of sequence progress
-     */
     updateSequenceDisplay() {
         const instruction = document.querySelector('.lobby-instruction');
         if (!instruction) return;
@@ -245,49 +253,103 @@ class GameRenderer {
         }
     }
 
-    /**
-     * Use sample data if quiz.json doesn't exist
-     */
-    useSampleData() {
-        const sampleQuiz = {
-            quizTitle: "Retro Arcade Trivia",
-            questions: [
-                {
-                    id: 1,
-                    question: "What was the most popular arcade game of 1982?",
-                    answers: {
-                        blue: "Pac-Man",
-                        orange: "Donkey Kong",
-                        green: "Space Invaders",
-                        yellow: "Galaga"
-                    },
-                    correct: "blue",
-                    points: 100
-                }
-            ]
-        };
+    // ==================== SCOREBOARD ====================
 
-        window.quizEngine.quiz = sampleQuiz;
-        window.quizEngine.questions = sampleQuiz.questions;
-        window.quizEngine.totalQuestions = sampleQuiz.questions.length;
+    updateScoreboardVisibility() {
+        const joined = window.gameState.getJoinedPlayers();
+        const joinedKeys = joined.map(p => p.key);
+
+        Object.entries(this.scoreBoxes).forEach(([key, box]) => {
+            if (joinedKeys.includes(key)) {
+                box.classList.add('active');
+            } else {
+                box.classList.remove('active');
+            }
+        });
+
+        // Also update lock-in dots visibility
+        Object.entries(this.lockinDots).forEach(([key, dot]) => {
+            if (joinedKeys.includes(key)) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
     }
 
-    /**
-     * Display a question
-     */
+    updateAllScores() {
+        const joined = window.gameState.getJoinedPlayers();
+
+        joined.forEach(player => {
+            const display = this.scoreDisplays[player.key];
+            if (display) {
+                display.textContent = player.score.toLocaleString();
+            }
+        });
+    }
+
+    updatePlayerStatuses() {
+        const joined = window.gameState.getJoinedPlayers();
+        const firstBuzz = window.gameState.round.firstBuzzPlayer;
+
+        joined.forEach(player => {
+            const statusEl = this.statusDisplays[player.key];
+            const lockinDot = this.lockinDots[player.key];
+            if (!statusEl) return;
+
+            // Reset classes
+            statusEl.className = 'player-status';
+            lockinDot?.classList.remove('locked');
+
+            if (player.lockedIn) {
+                statusEl.textContent = '✓ LOCKED';
+                statusEl.classList.add('locked');
+                lockinDot?.classList.add('locked');
+            } else if (player.selection) {
+                statusEl.textContent = 'SELECTING...';
+                statusEl.classList.add('selecting');
+            } else {
+                statusEl.textContent = '';
+            }
+
+            // First buzz indicator
+            if (player.key === firstBuzz) {
+                statusEl.classList.add('first-buzz');
+            }
+        });
+    }
+
+    // ==================== FIRST BUZZ BANNER ====================
+
+    showFirstBuzzBanner(playerKey) {
+        const playerNum = playerKey.replace('player', '');
+        this.elements.firstBuzzText.textContent = `P${playerNum} BUZZED FIRST!`;
+        this.elements.firstBuzzBanner.classList.remove('hidden');
+    }
+
+    hideFirstBuzzBanner() {
+        this.elements.firstBuzzBanner.classList.add('hidden');
+    }
+
+    // ==================== QUESTION DISPLAY ====================
+
     displayQuestion(question) {
         if (!question) return;
 
-        // Clear selection
-        this.clearSelection();
+        this.currentQuestion = question;
+        this.clearAllPlayerIndicators();
+        this.clearAnswerStates();
+        this.hideFirstBuzzBanner();
+        this.resetPlayerStatuses();
 
-        // Make sure answer buttons are visible
+        // Make answer buttons visible
         this.answerButtons.forEach(btn => {
             btn.style.visibility = 'visible';
             btn.style.opacity = '1';
+            btn.classList.remove('faded', 'correct-reveal', 'selected');
         });
 
-        // Update question text with animation
+        // Animate question
         this.elements.questionText.classList.add('animate-slide-in');
         this.elements.questionText.textContent = question.question;
 
@@ -297,7 +359,7 @@ class GameRenderer {
         this.elements.answerGreen.textContent = question.answers.green;
         this.elements.answerYellow.textContent = question.answers.yellow;
 
-        // Animate buttons in sequence
+        // Animate buttons
         this.answerButtons.forEach((btn, i) => {
             btn.style.opacity = '0';
             setTimeout(() => {
@@ -306,7 +368,6 @@ class GameRenderer {
             }, 100 + i * 100);
         });
 
-        // Remove animation classes after they play
         setTimeout(() => {
             this.elements.questionText.classList.remove('animate-slide-in');
             this.answerButtons.forEach(btn => {
@@ -315,87 +376,131 @@ class GameRenderer {
         }, 600);
     }
 
-    /**
-     * Update progress display
-     */
+    resetPlayerStatuses() {
+        Object.values(this.statusDisplays).forEach(el => {
+            if (el) {
+                el.textContent = '';
+                el.className = 'player-status';
+            }
+        });
+        Object.values(this.lockinDots).forEach(dot => {
+            if (dot) dot.classList.remove('locked');
+        });
+    }
+
     updateProgress() {
         const progress = window.quizEngine.getProgress();
-
-        this.elements.questionNumber.textContent = String(progress.current).padStart(2, '0');
         this.elements.qCurrent.textContent = String(progress.current).padStart(2, '0');
         this.elements.qTotal.textContent = String(progress.total).padStart(2, '0');
     }
 
-    /**
-     * Handle answer selection
-     */
-    selectAnswer(color) {
+    // ==================== ANSWER HANDLING (MULTIPLAYER) ====================
+
+    buzzIn(playerKey) {
         if (this.currentScreen !== 'game') return;
 
-        // Clear previous selection
-        this.clearSelection();
-
-        // Set new selection
-        this.selectedAnswer = color;
-
-        const button = document.querySelector(`.answer-btn.${color}`);
-        if (button) {
-            button.classList.add('selected', 'animate-shake');
-
-            // Tell game state
-            window.gameState.selectAnswer('player1', color);
-
-            setTimeout(() => {
-                button.classList.remove('animate-shake');
-            }, 300);
+        const success = window.gameState.buzzIn(playerKey);
+        if (success) {
+            this.updatePlayerStatuses();
         }
     }
 
-    /**
-     * Clear answer selection
-     */
-    clearSelection() {
-        this.selectedAnswer = null;
-        this.answerButtons.forEach(btn => {
-            btn.classList.remove('selected');
+    selectAnswer(playerKey, color) {
+        if (this.currentScreen !== 'game') return;
+
+        const success = window.gameState.selectAnswer(playerKey, color);
+        if (success) {
+            this.updatePlayerIndicators();
+            this.updatePlayerStatuses();
+        }
+    }
+
+    lockInAnswer(playerKey) {
+        if (this.currentScreen !== 'game') return;
+
+        const success = window.gameState.lockInAnswer(playerKey);
+        if (success) {
+            this.updatePlayerIndicators();
+            this.updatePlayerStatuses();
+
+            // Check if all players locked in
+            if (window.gameState.areAllPlayersLockedIn()) {
+                this.revealAnswer();
+            }
+        }
+    }
+
+    updatePlayerIndicators() {
+        this.clearAllPlayerIndicators();
+
+        const selections = window.gameState.getPlayerSelections();
+        const firstBuzz = window.gameState.round.firstBuzzPlayer;
+
+        for (const [playerKey, data] of Object.entries(selections)) {
+            const row = this.playerIndicatorRows[data.color];
+            if (row) {
+                const indicator = document.createElement('div');
+                const playerNum = playerKey.replace('player', '');
+                indicator.className = `player-indicator p${playerNum}`;
+                indicator.textContent = `P${playerNum}`;
+
+                if (data.lockedIn) {
+                    indicator.classList.add('locked');
+                }
+                if (playerKey === firstBuzz) {
+                    indicator.classList.add('first-buzz');
+                }
+
+                row.appendChild(indicator);
+            }
+        }
+    }
+
+    clearAllPlayerIndicators() {
+        Object.values(this.playerIndicatorRows).forEach(row => {
+            if (row) row.innerHTML = '';
         });
     }
 
-    /**
-     * Submit the current answer
-     */
-    submitAnswer() {
-        if (this.currentScreen !== 'game') return;
+    clearAnswerStates() {
+        this.answerButtons.forEach(btn => {
+            btn.classList.remove('selected', 'faded', 'correct-reveal');
+        });
+    }
 
-        if (!this.selectedAnswer) {
-            // Visual feedback - shake submit button
-            this.elements.submitBtn.classList.add('animate-shake');
-            setTimeout(() => {
-                this.elements.submitBtn.classList.remove('animate-shake');
-            }, 300);
-            return;
+    // ==================== ANSWER REVEAL ====================
+
+    revealAnswer() {
+        if (!this.currentQuestion) return;
+
+        const correctColor = this.currentQuestion.correct;
+        console.log(`[Renderer] Revealing answer: ${correctColor}`);
+
+        // Get results from game state
+        const results = window.gameState.verifyAllAnswers(correctColor);
+
+        // Update stats
+        const anyCorrect = results.some(r => r.isCorrect);
+        if (anyCorrect) this.stats.correctAnswers++;
+
+        // Track best combo
+        const maxCombo = Math.max(...results.map(r => r.combo));
+        if (maxCombo > this.stats.bestCombo) {
+            this.stats.bestCombo = maxCombo;
         }
 
-        // Check answer
-        const result = window.quizEngine.checkAnswer(this.selectedAnswer);
-
-        if (result.correct) {
-            this.stats.correctAnswers++;
-            this.showCorrectFeedback(this.selectedAnswer);
-            window.gameState.verifyAnswer(true, result.points);
-
-            // Track best combo
-            const currentCombo = window.gameState.getCombo('player1');
-            if (currentCombo > this.stats.bestCombo) {
-                this.stats.bestCombo = currentCombo;
+        // Visual reveal
+        this.answerButtons.forEach(btn => {
+            const btnColor = btn.dataset.color;
+            if (btnColor === correctColor) {
+                btn.classList.add('correct-reveal');
+            } else {
+                btn.classList.add('faded');
             }
-        } else {
-            this.showWrongFeedback(this.selectedAnswer, result.correctAnswer);
-            window.gameState.verifyAnswer(false, 0);
-        }
+        });
 
-        // Update score display
-        this.updateScore();
+        // Update scores
+        this.updateAllScores();
 
         // Move to next question after delay
         setTimeout(() => {
@@ -408,79 +513,14 @@ class GameRenderer {
             } else {
                 this.showGameOver();
             }
-        }, 1500);
+        }, 2500);
     }
 
-    /**
-     * Show correct answer feedback
-     */
-    showCorrectFeedback(color) {
-        const button = document.querySelector(`.answer-btn.${color}`);
-        if (button) {
-            button.classList.add('animate-correct');
-            setTimeout(() => button.classList.remove('animate-correct'), 1500);
-        }
-
-        // Pulse the score
-        this.elements.player1Score.classList.add('animate-big-pulse');
-        setTimeout(() => {
-            this.elements.player1Score.classList.remove('animate-big-pulse');
-        }, 600);
-    }
-
-    /**
-     * Show wrong answer feedback
-     */
-    showWrongFeedback(selectedColor, correctColor) {
-        const wrongButton = document.querySelector(`.answer-btn.${selectedColor}`);
-        const correctButton = document.querySelector(`.answer-btn.${correctColor}`);
-
-        if (wrongButton) {
-            wrongButton.classList.add('animate-wrong');
-            setTimeout(() => wrongButton.classList.remove('animate-wrong'), 1000);
-        }
-
-        if (correctButton) {
-            setTimeout(() => {
-                correctButton.classList.add('animate-correct');
-                setTimeout(() => correctButton.classList.remove('animate-correct'), 1500);
-            }, 500);
-        }
-    }
-
-    /**
-     * Update score display
-     */
-    updateScore() {
-        const score = window.gameState.getScore('player1');
-        const combo = window.gameState.getCombo('player1');
-
-        this.elements.player1Score.textContent = score.toLocaleString();
-        this.elements.combo.textContent = `COMBO x${Math.max(1, combo)}`;
-
-        // Check for new hi-score
-        if (score > window.gameState.getHiScore()) {
-            this.elements.hiScore.textContent = score.toLocaleString();
-            this.elements.hiScore.classList.add('animate-glow');
-        }
-    }
-
-    /**
-     * Update hi-score display
-     */
-    updateHiScore() {
-        this.elements.hiScore.textContent = window.gameState.getHiScore().toLocaleString();
-    }
-
-    /**
-     * Update timer display
-     */
     updateTimer(seconds) {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         this.elements.timer.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
 
-        // Warning animation when low
         if (seconds <= 10) {
             this.elements.timer.classList.add('animate-timer-warning');
         } else {
@@ -488,102 +528,101 @@ class GameRenderer {
         }
     }
 
-    /**
-     * Show game over screen
-     */
+    // ==================== GAME OVER ====================
+
     showGameOver() {
         window.gameState.setState(window.gameState.STATES.GAME_OVER);
         window.gameState.saveHiScore();
 
-        // Update final score display
-        const finalScore = window.gameState.getScore('player1');
-        this.elements.finalScore.textContent = finalScore.toLocaleString();
+        // Build final scores
+        const players = window.gameState.getJoinedPlayers();
+        const sorted = players.sort((a, b) => b.score - a.score);
 
-        // Update stats
+        const scoresHTML = sorted.map((player, index) => {
+            const rank = index === 0 ? '🏆' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index + 1}`));
+            const playerNum = player.key.replace('player', '');
+            const winnerClass = index === 0 ? 'winner' : '';
+            return `
+                <div class="final-score-row ${winnerClass}">
+                    <span class="rank">${rank}</span>
+                    <span class="player-name">PLAYER ${playerNum}</span>
+                    <span class="final-points">${player.score.toLocaleString()}</span>
+                </div>
+            `;
+        }).join('');
+
+        this.elements.finalScores.innerHTML = scoresHTML;
         this.elements.statQuestions.textContent = this.stats.totalQuestions;
         this.elements.statCorrect.textContent = this.stats.correctAnswers;
         this.elements.statCombo.textContent = `x${Math.max(1, this.stats.bestCombo)}`;
 
-        // Show game over screen
         this.showScreen('gameOver');
     }
 
-    /**
-     * Restart game
-     */
     restartGame() {
-        // Reset player slots
         Object.values(this.playerSlots).forEach(slot => {
             slot.classList.remove('joined');
             slot.querySelector('.slot-status').textContent = 'Press 🔴 to join';
         });
 
-        // Go back to lobby
         this.showScreen('lobby');
+        this.updateSequenceDisplay();
     }
 
-    // ====================
-    // Event Listeners
-    // ====================
+    useSampleData() {
+        const sampleQuiz = {
+            quizTitle: "Retro Arcade Trivia",
+            questions: [
+                {
+                    id: 1,
+                    question: "What was the most popular arcade game of 1982?",
+                    answers: { blue: "Pac-Man", orange: "Donkey Kong", green: "Space Invaders", yellow: "Galaga" },
+                    correct: "blue",
+                    points: 100
+                }
+            ]
+        };
+
+        window.quizEngine.quiz = sampleQuiz;
+        window.quizEngine.questions = sampleQuiz.questions;
+        window.quizEngine.totalQuestions = sampleQuiz.questions.length;
+    }
+
+    // ==================== EVENT LISTENERS ====================
 
     setupButtonListeners() {
-        // Answer buttons
         this.answerButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const color = btn.dataset.color;
-                this.selectAnswer(color);
+                this.selectAnswer('player1', color);
             });
         });
 
-        // Submit button
-        this.elements.submitBtn.addEventListener('click', () => {
-            this.submitAnswer();
-        });
-
-        // Play again button
         if (this.elements.playAgainBtn) {
             this.elements.playAgainBtn.addEventListener('click', () => {
                 this.restartGame();
             });
         }
-
-        // Hint button
-        this.elements.hintBtn.addEventListener('click', () => {
-            console.log('[Renderer] Hint requested');
-        });
-
-        // Skip button
-        this.elements.skipBtn.addEventListener('click', () => {
-            if (window.quizEngine.hasMoreQuestions()) {
-                window.quizEngine.nextQuestion();
-                this.displayQuestion(window.quizEngine.getCurrentQuestion());
-                this.updateProgress();
-                window.gameState.resetRound();
-            }
-        });
     }
 
     setupKeyboardListeners() {
         document.addEventListener('keydown', (e) => {
-            // Handle lobby screen
+            // Lobby controls
             if (this.currentScreen === 'lobby') {
-                // J = Join as player 1
                 if (e.key.toLowerCase() === 'j') {
                     this.playerJoin('player1');
                     return;
                 }
-                // Color keys for start sequence
                 const keyMap = {
                     'b': 'blue', '1': 'blue', 'o': 'orange', '2': 'orange',
                     'g': 'green', '3': 'green', 'y': 'yellow', '4': 'yellow'
                 };
                 const color = keyMap[e.key.toLowerCase()];
-                if (color) {
-                    this.handleStartSequence(color);
-                }
+                if (color) this.handleStartSequence(color);
                 return;
             }
 
+            // Game over controls
             if (this.currentScreen === 'gameOver') {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -593,39 +632,27 @@ class GameRenderer {
             }
 
             // Game controls
-            switch (e.key.toLowerCase()) {
-                case '1':
-                case 'b':
-                    this.selectAnswer('blue');
-                    break;
-                case '2':
-                case 'o':
-                    this.selectAnswer('orange');
-                    break;
-                case '3':
-                case 'g':
-                    this.selectAnswer('green');
-                    break;
-                case '4':
-                case 'y':
-                    this.selectAnswer('yellow');
-                    break;
-                case 'enter':
-                case ' ':
-                    e.preventDefault();
-                    this.submitAnswer();
-                    break;
+            const keyMap = {
+                'b': 'blue', '1': 'blue', 'o': 'orange', '2': 'orange',
+                'g': 'green', '3': 'green', 'y': 'yellow', '4': 'yellow'
+            };
+            const color = keyMap[e.key.toLowerCase()];
+            if (color) {
+                this.selectAnswer('player1', color);
             }
 
-            // Fullscreen toggle (works on all screens)
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.lockInAnswer('player1');
+            }
+
+            // Fullscreen
             if (e.key === 'F11') {
                 e.preventDefault();
-                if (window.electronAPI) {
-                    window.electronAPI.toggleFullscreen();
-                }
+                if (window.electronAPI) window.electronAPI.toggleFullscreen();
             }
 
-            // TV mode toggle
+            // TV mode
             if (e.key === 't' && e.ctrlKey) {
                 document.body.classList.toggle('tv-mode');
             }
@@ -638,7 +665,12 @@ class GameRenderer {
         });
 
         window.gameState.on('timeUp', () => {
-            this.elements.questionText.textContent = "⏰ TIME'S UP!";
+            this.revealAnswer();
+        });
+
+        window.gameState.on('firstBuzz', ({ player }) => {
+            console.log(`[Renderer] 🔔 First buzz: ${player}`);
+            this.showFirstBuzzBanner(player);
         });
     }
 
@@ -646,7 +678,7 @@ class GameRenderer {
         window.gamepadManager.on('buttonPress', ({ player, color }) => {
             console.log(`[Renderer] Gamepad: ${player} pressed ${color}`);
 
-            // Handle lobby
+            // Lobby
             if (this.currentScreen === 'lobby') {
                 if (color === 'red') {
                     this.playerJoin(player);
@@ -656,27 +688,33 @@ class GameRenderer {
                 return;
             }
 
-            // Handle game over
+            // Game over
             if (this.currentScreen === 'gameOver') {
-                if (color === 'red') {
-                    this.restartGame();
-                }
+                if (color === 'red') this.restartGame();
                 return;
             }
 
-            // Game controls
+            // Game - answer selection per player
             if (['blue', 'orange', 'green', 'yellow'].includes(color)) {
-                this.selectAnswer(color);
+                this.selectAnswer(player, color);
             }
 
+            // Red = buzz in first, OR lock in if already selected
             if (color === 'red') {
-                this.submitAnswer();
+                const playerData = window.gameState.players[player];
+                if (playerData && playerData.selection) {
+                    // Already has selection, lock it in
+                    this.lockInAnswer(player);
+                } else {
+                    // No selection yet, this is a buzz-in
+                    this.buzzIn(player);
+                }
             }
         });
     }
 }
 
-// Initialize when DOM is ready
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     window.renderer = new GameRenderer();
 });

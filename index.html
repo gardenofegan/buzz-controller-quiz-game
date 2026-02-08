@@ -16,100 +16,95 @@
   <div class="scanlines"></div>
 
   <div class="game-container">
-    <!-- Top HUD -->
-    <header class="hud">
-      <!-- Player 1 Score -->
-      <div class="player-score">
-        <div class="player-label">PLAYER 1</div>
-        <div class="score-value" id="player1-score">0</div>
-        <div class="lives">
-          <span class="heart">♥</span>
-          <span class="heart">♥</span>
-          <span class="heart">♥</span>
+    <!-- Top HUD - 4 Player Scoreboard -->
+    <header class="hud multiplayer-hud">
+      <div class="player-scoreboard">
+        <div class="player-score-box p1" id="scorebox-p1">
+          <div class="player-label">P1</div>
+          <div class="score-value" id="score-p1">0</div>
+          <div class="player-status" id="status-p1"></div>
+        </div>
+        <div class="player-score-box p2" id="scorebox-p2">
+          <div class="player-label">P2</div>
+          <div class="score-value" id="score-p2">0</div>
+          <div class="player-status" id="status-p2"></div>
+        </div>
+        <div class="player-score-box p3" id="scorebox-p3">
+          <div class="player-label">P3</div>
+          <div class="score-value" id="score-p3">0</div>
+          <div class="player-status" id="status-p3"></div>
+        </div>
+        <div class="player-score-box p4" id="scorebox-p4">
+          <div class="player-label">P4</div>
+          <div class="score-value" id="score-p4">0</div>
+          <div class="player-status" id="status-p4"></div>
         </div>
       </div>
-
-      <!-- Question Counter -->
-      <div class="question-counter">
-        <div class="counter-box" id="question-number">01</div>
-      </div>
-
-      <!-- Hi-Score -->
-      <div class="hi-score">
-        <div class="hi-label">HI-SCORE</div>
-        <div class="hi-value" id="hi-score">0</div>
-        <div class="combo" id="combo">COMBO x1</div>
-      </div>
     </header>
+
+    <!-- First Buzzer Banner -->
+    <div class="first-buzz-banner hidden" id="first-buzz-banner">
+      <span class="buzz-icon">🔔</span>
+      <span class="buzz-text" id="first-buzz-text">P1 BUZZED FIRST!</span>
+    </div>
 
     <!-- Question Display Area -->
     <main class="question-area">
       <div class="question-badge">QUESTION <span id="q-current">01</span>/<span id="q-total">10</span></div>
       <div class="question-box">
         <p class="question-text" id="question-text">What was the most popular arcade game of 1982?</p>
-        <div class="question-indicators">
-          <span class="indicator active"></span>
-          <span class="indicator"></span>
-        </div>
       </div>
 
       <!-- Answer Buttons - Matching Buzz Controller Layout -->
-      <!-- Layout: Blue (top-left), Orange (top-right), Green (bottom-left), Yellow (bottom-right) -->
       <div class="answers-grid">
         <button class="answer-btn blue" data-color="blue">
           <span class="btn-icon">▲</span>
           <span class="btn-text" id="answer-blue">Pac-Man</span>
+          <div class="player-indicators-row" data-color="blue"></div>
         </button>
         <button class="answer-btn orange" data-color="orange">
           <span class="btn-icon">■</span>
           <span class="btn-text" id="answer-orange">Donkey Kong</span>
+          <div class="player-indicators-row" data-color="orange"></div>
         </button>
         <button class="answer-btn green" data-color="green">
           <span class="btn-icon">●</span>
           <span class="btn-text" id="answer-green">Space Invaders</span>
-          <span class="selected-badge">SELECTED</span>
+          <div class="player-indicators-row" data-color="green"></div>
         </button>
         <button class="answer-btn yellow" data-color="yellow">
           <span class="btn-icon">✕</span>
           <span class="btn-text" id="answer-yellow">Galaga</span>
+          <div class="player-indicators-row" data-color="yellow"></div>
         </button>
       </div>
     </main>
 
-    <!-- Bottom HUD -->
+    <!-- Bottom HUD - Timer & Lock-in Status -->
     <footer class="bottom-hud">
       <!-- Timer -->
       <div class="timer-box">
         <div class="timer-label">TIME LEFT</div>
         <div class="timer-display">
           <span class="timer-icon">⏱</span>
-          <span class="timer-value" id="timer">0:45</span>
+          <span class="timer-value" id="timer">0:30</span>
         </div>
       </div>
 
-      <!-- Submit Button -->
-      <button class="submit-btn" id="submit-btn">
-        SUBMIT <span class="bolt">⚡</span>
-      </button>
-
-      <!-- Power-ups -->
-      <div class="powerups">
-        <button class="powerup-btn hint" id="hint-btn" title="Hint">💡</button>
-        <button class="powerup-btn skip" id="skip-btn" title="Skip">⏭</button>
+      <!-- Lock-in Status -->
+      <div class="lockin-status" id="lockin-status">
+        <span class="lockin-text">WAITING FOR LOCK-INS...</span>
+        <div class="lockin-indicators">
+          <span class="lockin-dot p1" id="lockin-p1"></span>
+          <span class="lockin-dot p2" id="lockin-p2"></span>
+          <span class="lockin-dot p3" id="lockin-p3"></span>
+          <span class="lockin-dot p4" id="lockin-p4"></span>
+        </div>
       </div>
 
-      <!-- Player indicators -->
-      <div class="player-indicators">
-        <span class="player-dot p1"></span>
-        <span class="player-dot p2"></span>
-        <span class="player-dot p3"></span>
-        <span class="player-dot p4"></span>
-      </div>
-
-      <!-- Insert Coin Prompt -->
-      <div class="insert-coin">
-        <div class="press-start">PRESS START</div>
-        <div class="coin-text">▶ INSERT COIN</div>
+      <!-- Submit hint for keyboard players -->
+      <div class="keyboard-hint">
+        Press 🔴 RED to lock in
       </div>
     </footer>
   </div>
@@ -150,11 +145,7 @@
       <h1 class="game-over-title">🎮 GAME OVER</h1>
 
       <div class="final-scores" id="final-scores">
-        <div class="final-score-row winner">
-          <span class="rank">🏆</span>
-          <span class="player-name">PLAYER 1</span>
-          <span class="final-points" id="final-score">0</span>
-        </div>
+        <!-- Dynamically populated -->
       </div>
 
       <div class="game-over-stats">
@@ -175,11 +166,6 @@
       <button class="play-again-btn" id="play-again-btn">PLAY AGAIN</button>
       <p class="lobby-hint">Press SPACE or 🔴 to restart</p>
     </div>
-  </div>
-
-  <!-- Gamepad Status (Debug) -->
-  <div class="gamepad-status" id="gamepad-status">
-    🎮 No controller detected
   </div>
 
   <script src="modules/gamepad-manager.js"></script>

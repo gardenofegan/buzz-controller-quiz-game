@@ -3,7 +3,7 @@
  * Handles the game state machine, scoring, and player management
  * 
  * States:
- *   LOBBY -> QUESTION_REVEAL -> BUZZ_IN -> VERIFICATION -> SCOREBOARD -> (repeat or END)
+ *   LOBBY -> QUESTION_REVEAL -> ANSWERING -> VERIFICATION -> SCOREBOARD -> (repeat or END)
  */
 
 class GameState {
@@ -12,8 +12,8 @@ class GameState {
         this.STATES = {
             LOBBY: 'LOBBY',
             QUESTION_REVEAL: 'QUESTION_REVEAL',
-            BUZZ_IN: 'BUZZ_IN',
-            VERIFICATION: 'VERIFICATION',
+            ANSWERING: 'ANSWERING',       // Players selecting answers
+            VERIFICATION: 'VERIFICATION', // Showing correct answer
             SCOREBOARD: 'SCOREBOARD',
             GAME_OVER: 'GAME_OVER'
         };
@@ -22,16 +22,17 @@ class GameState {
 
         // Player data
         this.players = {
-            player1: { joined: false, score: 0, lives: 3, combo: 0 },
-            player2: { joined: false, score: 0, lives: 3, combo: 0 },
-            player3: { joined: false, score: 0, lives: 3, combo: 0 },
-            player4: { joined: false, score: 0, lives: 3, combo: 0 }
+            player1: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false },
+            player2: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false },
+            player3: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false },
+            player4: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false }
         };
 
         // Game settings
         this.settings = {
-            timePerQuestion: 45, // seconds
-            buzzInLockout: 500,   // ms lockout after someone buzzes
+            timePerQuestion: 30,       // seconds
+            buzzInBonus: 50,           // Extra points for first correct buzz-in
+            buzzInPenalty: 50,         // Points lost for wrong first buzz-in
             pointsCorrect: 100,
             pointsWrong: 0,
             comboMultiplier: true
@@ -39,11 +40,11 @@ class GameState {
 
         // Current round data
         this.round = {
-            selectedAnswer: null,
-            buzzedPlayer: null,
-            timerValue: 45,
+            firstBuzzPlayer: null,     // Who buzzed in first
+            firstBuzzTime: null,       // When they buzzed
+            timerValue: 30,
             timerInterval: null,
-            locked: false
+            correctAnswer: null        // Set when question is shown
         };
 
         // Event listeners
@@ -70,6 +71,7 @@ class GameState {
                 this.resetRound();
                 break;
             case this.STATES.QUESTION_REVEAL:
+                this.resetRoundSelections();
                 this.startTimer();
                 break;
             case this.STATES.VERIFICATION:
@@ -85,13 +87,13 @@ class GameState {
      * Player joins the game (press Red buzzer in lobby)
      */
     playerJoin(playerKey) {
-        if (this.currentState !== this.STATES.LOBBY) return false;
-
         if (this.players[playerKey]) {
             this.players[playerKey].joined = true;
             this.players[playerKey].score = 0;
             this.players[playerKey].lives = 3;
             this.players[playerKey].combo = 0;
+            this.players[playerKey].selection = null;
+            this.players[playerKey].lockedIn = false;
 
             console.log(`[GameState] ${playerKey} joined!`);
             this.emit('playerJoined', { player: playerKey });
@@ -111,19 +113,50 @@ class GameState {
     }
 
     /**
-     * Handle answer selection
+     * Get count of joined players
      */
-    selectAnswer(playerKey, color) {
-        if (this.currentState !== this.STATES.BUZZ_IN &&
+    getJoinedPlayerCount() {
+        return this.getJoinedPlayers().length;
+    }
+
+    /**
+     * Player buzzes in (presses red button to claim the question)
+     */
+    buzzIn(playerKey) {
+        if (this.currentState !== this.STATES.ANSWERING &&
             this.currentState !== this.STATES.QUESTION_REVEAL) {
             return false;
         }
 
-        if (this.round.locked) return false;
+        const player = this.players[playerKey];
+        if (!player || !player.joined) return false;
 
-        // For single player mode or first buzz
-        this.round.selectedAnswer = color;
-        this.round.buzzedPlayer = playerKey;
+        // Track first buzz-in
+        if (!this.round.firstBuzzPlayer) {
+            this.round.firstBuzzPlayer = playerKey;
+            this.round.firstBuzzTime = Date.now();
+            console.log(`[GameState] 🔔 ${playerKey} BUZZED IN FIRST!`);
+            this.emit('firstBuzz', { player: playerKey });
+            return true;
+        }
+
+        return false; // Someone already buzzed
+    }
+
+    /**
+     * Handle answer selection (player picks a color)
+     */
+    selectAnswer(playerKey, color) {
+        if (this.currentState !== this.STATES.ANSWERING &&
+            this.currentState !== this.STATES.QUESTION_REVEAL) {
+            return false;
+        }
+
+        const player = this.players[playerKey];
+        if (!player || !player.joined || player.lockedIn) return false;
+
+        // Update selection (can change until locked in)
+        player.selection = color;
 
         console.log(`[GameState] ${playerKey} selected ${color}`);
         this.emit('answerSelected', { player: playerKey, color });
@@ -132,39 +165,124 @@ class GameState {
     }
 
     /**
-     * Verify the selected answer
+     * Lock in answer (player presses red to confirm)
      */
-    verifyAnswer(isCorrect, points) {
-        const player = this.round.buzzedPlayer || 'player1';
-
-        if (isCorrect) {
-            // Apply combo multiplier
-            this.players[player].combo++;
-            const multiplier = this.settings.comboMultiplier ?
-                Math.min(this.players[player].combo, 5) : 1;
-
-            const finalPoints = points * multiplier;
-            this.players[player].score += finalPoints;
-
-            console.log(`[GameState] ${player} CORRECT! +${finalPoints} points (x${multiplier} combo)`);
-            this.emit('correct', {
-                player,
-                points: finalPoints,
-                combo: this.players[player].combo
-            });
-        } else {
-            // Reset combo on wrong answer
-            this.players[player].combo = 0;
-
-            console.log(`[GameState] ${player} WRONG!`);
-            this.emit('wrong', { player });
+    lockInAnswer(playerKey) {
+        if (this.currentState !== this.STATES.ANSWERING &&
+            this.currentState !== this.STATES.QUESTION_REVEAL) {
+            return false;
         }
 
-        return {
-            player,
-            score: this.players[player].score,
-            combo: this.players[player].combo
-        };
+        const player = this.players[playerKey];
+        if (!player || !player.joined || !player.selection) return false;
+
+        if (player.lockedIn) return false; // Already locked
+
+        player.lockedIn = true;
+
+        console.log(`[GameState] ${playerKey} LOCKED IN: ${player.selection}`);
+        this.emit('answerLockedIn', { player: playerKey, color: player.selection });
+
+        // Check if all players are locked in
+        if (this.areAllPlayersLockedIn()) {
+            this.emit('allPlayersLockedIn', {});
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if all joined players have locked in
+     */
+    areAllPlayersLockedIn() {
+        const joined = this.getJoinedPlayers();
+        return joined.length > 0 && joined.every(p => p.lockedIn);
+    }
+
+    /**
+     * Get all player selections for display
+     */
+    getPlayerSelections() {
+        const result = {};
+        for (const [key, player] of Object.entries(this.players)) {
+            if (player.joined && player.selection) {
+                result[key] = {
+                    color: player.selection,
+                    lockedIn: player.lockedIn
+                };
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Verify all answers and award points
+     */
+    verifyAllAnswers(correctColor) {
+        this.round.correctAnswer = correctColor;
+        const results = [];
+
+        for (const [playerKey, player] of Object.entries(this.players)) {
+            if (!player.joined) continue;
+
+            const isCorrect = player.selection === correctColor;
+            const isFirstBuzz = this.round.firstBuzzPlayer === playerKey;
+
+            let pointsEarned = 0;
+            let bonusApplied = false;
+            let penaltyApplied = false;
+
+            if (player.selection) {
+                if (isCorrect) {
+                    // Base points
+                    pointsEarned = this.settings.pointsCorrect;
+
+                    // Combo multiplier
+                    player.combo++;
+                    const multiplier = this.settings.comboMultiplier ?
+                        Math.min(player.combo, 5) : 1;
+                    pointsEarned *= multiplier;
+
+                    // First buzz bonus
+                    if (isFirstBuzz) {
+                        pointsEarned += this.settings.buzzInBonus;
+                        bonusApplied = true;
+                    }
+
+                    player.score += pointsEarned;
+                } else {
+                    // Wrong answer
+                    player.combo = 0;
+
+                    // First buzz penalty
+                    if (isFirstBuzz) {
+                        pointsEarned = -this.settings.buzzInPenalty;
+                        player.score = Math.max(0, player.score + pointsEarned);
+                        penaltyApplied = true;
+                    }
+                }
+            } else {
+                // Didn't answer
+                player.combo = 0;
+            }
+
+            results.push({
+                player: playerKey,
+                selection: player.selection,
+                isCorrect,
+                isFirstBuzz,
+                pointsEarned,
+                bonusApplied,
+                penaltyApplied,
+                newScore: player.score,
+                combo: player.combo
+            });
+        }
+
+        console.log('[GameState] Round results:', results);
+        this.emit('roundResults', { correctColor, results });
+
+        return results;
     }
 
     /**
@@ -193,17 +311,26 @@ class GameState {
     }
 
     /**
+     * Reset round selections (keep timer running)
+     */
+    resetRoundSelections() {
+        this.round.firstBuzzPlayer = null;
+        this.round.firstBuzzTime = null;
+        this.round.correctAnswer = null;
+
+        for (const player of Object.values(this.players)) {
+            player.selection = null;
+            player.lockedIn = false;
+        }
+    }
+
+    /**
      * Reset round data for next question
      */
     resetRound() {
         this.stopTimer();
-        this.round = {
-            selectedAnswer: null,
-            buzzedPlayer: null,
-            timerValue: this.settings.timePerQuestion,
-            timerInterval: null,
-            locked: false
-        };
+        this.resetRoundSelections();
+        this.round.timerValue = this.settings.timePerQuestion;
     }
 
     /**
@@ -250,9 +377,11 @@ class GameState {
             player.score = 0;
             player.lives = 3;
             player.combo = 0;
+            player.selection = null;
+            player.lockedIn = false;
+            // Note: don't reset 'joined' here, that happens in lobby reset
         }
         this.resetRound();
-        this.setState(this.STATES.LOBBY);
     }
 
     // Event system
