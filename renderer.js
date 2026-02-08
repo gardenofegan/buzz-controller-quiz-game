@@ -41,7 +41,11 @@ class GameRenderer {
             finalScores: document.getElementById('final-scores'),
             statQuestions: document.getElementById('stat-questions'),
             statCorrect: document.getElementById('stat-correct'),
-            statCombo: document.getElementById('stat-combo')
+            statCombo: document.getElementById('stat-combo'),
+
+            // Countdown overlay
+            countdownOverlay: document.getElementById('countdown-overlay'),
+            countdownNumber: document.getElementById('countdown-number')
         };
 
         // Player score boxes
@@ -197,6 +201,12 @@ class GameRenderer {
             slot.querySelector('.slot-status').textContent = 'READY!';
             console.log(`[Renderer] ${playerKey} joined!`);
             this.updateSequenceDisplay();
+
+            // LED: Light up in lobby to show who's joined
+            const playerNum = parseInt(playerKey.replace('player', ''));
+            if (window.electronAPI?.led) {
+                window.electronAPI.led.set(playerNum, true);
+            }
         }
     }
 
@@ -342,6 +352,11 @@ class GameRenderer {
         this.hideFirstBuzzBanner();
         this.resetPlayerStatuses();
 
+        // LED: Turn off all LEDs at start of each question
+        if (window.electronAPI?.led) {
+            window.electronAPI.led.offAll();
+        }
+
         // Make answer buttons visible
         this.answerButtons.forEach(btn => {
             btn.style.visibility = 'visible';
@@ -422,6 +437,12 @@ class GameRenderer {
         if (success) {
             this.updatePlayerIndicators();
             this.updatePlayerStatuses();
+
+            // LED: Turn ON when player locks in
+            const playerNum = parseInt(playerKey.replace('player', ''));
+            if (window.electronAPI?.led) {
+                window.electronAPI.led.set(playerNum, true);
+            }
 
             // Check if all players locked in
             if (window.gameState.areAllPlayersLockedIn()) {
@@ -504,16 +525,51 @@ class GameRenderer {
 
         // Move to next question after delay
         setTimeout(() => {
+            // Reset LEDs to "joined" state (solid on for joined players)
+            this.resetLEDsToJoined();
+
             if (window.quizEngine.hasMoreQuestions()) {
                 window.quizEngine.nextQuestion();
-                this.displayQuestion(window.quizEngine.getCurrentQuestion());
-                this.updateProgress();
-                window.gameState.resetRound();
-                window.gameState.setState(window.gameState.STATES.QUESTION_REVEAL);
+                this.showCountdown(() => {
+                    this.displayQuestion(window.quizEngine.getCurrentQuestion());
+                    this.updateProgress();
+                    window.gameState.resetRound();
+                    window.gameState.setState(window.gameState.STATES.QUESTION_REVEAL);
+                });
             } else {
                 this.showGameOver();
             }
-        }, 2500);
+        }, 2000);
+    }
+
+    // ==================== COUNTDOWN ====================
+
+    showCountdown(callback) {
+        let count = 3;
+        this.elements.countdownNumber.textContent = count;
+        this.elements.countdownOverlay.classList.remove('hidden');
+
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                this.elements.countdownNumber.textContent = count;
+                // Re-trigger animation
+                this.elements.countdownNumber.style.animation = 'none';
+                void this.elements.countdownNumber.offsetWidth; // Force reflow
+                this.elements.countdownNumber.style.animation = 'countdownPop 0.8s ease-out';
+            } else {
+                clearInterval(interval);
+                this.elements.countdownOverlay.classList.add('hidden');
+                if (callback) callback();
+            }
+        }, 1000);
+    }
+
+    resetLEDsToJoined() {
+        // LEDs should be OFF during countdown/between questions
+        if (window.electronAPI?.led) {
+            window.electronAPI.led.offAll();
+        }
     }
 
     updateTimer(seconds) {
@@ -538,6 +594,12 @@ class GameRenderer {
         const players = window.gameState.getJoinedPlayers();
         const sorted = players.sort((a, b) => b.score - a.score);
 
+        // LED: Victory sequence for winner
+        if (sorted.length > 0 && window.electronAPI?.led) {
+            const winnerNum = parseInt(sorted[0].key.replace('player', ''));
+            window.electronAPI.led.victory(winnerNum);
+        }
+
         const scoresHTML = sorted.map((player, index) => {
             const rank = index === 0 ? '🏆' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index + 1}`));
             const playerNum = player.key.replace('player', '');
@@ -560,6 +622,11 @@ class GameRenderer {
     }
 
     restartGame() {
+        // LED: Turn off all LEDs
+        if (window.electronAPI?.led) {
+            window.electronAPI.led.offAll();
+        }
+
         Object.values(this.playerSlots).forEach(slot => {
             slot.classList.remove('joined');
             slot.querySelector('.slot-status').textContent = 'Press 🔴 to join';
@@ -671,6 +738,12 @@ class GameRenderer {
         window.gameState.on('firstBuzz', ({ player }) => {
             console.log(`[Renderer] 🔔 First buzz: ${player}`);
             this.showFirstBuzzBanner(player);
+
+            // LED: Flash the buzzer who buzzed in first
+            const playerNum = parseInt(player.replace('player', ''));
+            if (window.electronAPI?.led) {
+                window.electronAPI.led.flash(playerNum, 3, 150);
+            }
         });
     }
 

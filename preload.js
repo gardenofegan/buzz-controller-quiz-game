@@ -5,9 +5,32 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
     toggleFullscreen: () => ipcRenderer.send('toggle-fullscreen'),
 
-    // Quiz file loading (for Phase 3)
+    // Quiz file loading
     loadQuiz: async (filename) => {
         return ipcRenderer.invoke('load-quiz', filename);
+    },
+
+    // LED Control API
+    led: {
+        // Turn single LED on/off (player: 1-4)
+        set: (player, on) => ipcRenderer.send('led-set', { player, on }),
+
+        // Turn all LEDs on/off
+        setAll: (on) => ipcRenderer.send('led-set-all', on),
+
+        // Flash a single LED (player: 1-4)
+        flash: (player, times = 3, interval = 200) =>
+            ipcRenderer.send('led-flash', { player, times, interval }),
+
+        // Flash then stay on
+        flashThenOn: (player, times = 3, interval = 200) =>
+            ipcRenderer.send('led-flash-then-on', { player, times, interval }),
+
+        // Victory sequence for winner (player: 1-4)
+        victory: (winner) => ipcRenderer.send('led-victory', { winner }),
+
+        // Turn off all LEDs
+        offAll: () => ipcRenderer.send('led-off-all')
     }
 });
 

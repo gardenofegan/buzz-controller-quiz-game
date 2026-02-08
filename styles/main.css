@@ -223,6 +223,61 @@ body {
 }
 
 /* =====================================================
+   COUNTDOWN OVERLAY (Between Questions)
+   ===================================================== */
+.countdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.countdown-overlay.hidden {
+  display: none;
+}
+
+.countdown-content {
+  text-align: center;
+}
+
+.countdown-label {
+  font-size: 1.5rem;
+  color: var(--cyan-glow);
+  text-shadow: 0 0 20px var(--cyan-glow);
+  margin-bottom: 1rem;
+  animation: pulse 0.5s ease-in-out infinite;
+}
+
+.countdown-number {
+  font-size: 10rem;
+  color: var(--text-primary);
+  text-shadow: 0 0 40px var(--pink-hot), 0 0 80px var(--pink-hot);
+  animation: countdownPop 0.8s ease-out;
+}
+
+@keyframes countdownPop {
+  0% {
+    transform: scale(2);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* =====================================================
    BOTTOM HUD - Timer & Lock-in Status  
    ===================================================== */
 .bottom-hud {
