@@ -55,7 +55,6 @@ JSON
     }
   ]
 }
-(Note: Using local context like Lawrenceburg, IN)
 
 Phase 4: Game Logic & State Management
 Step 4.1: Build a state machine with the following phases:

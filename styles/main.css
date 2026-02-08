@@ -507,3 +507,229 @@ body {
     padding: 2rem 4rem;
   }
 }
+
+/* =====================================================
+   SCREEN OVERLAYS (Lobby, Game Over)
+   ===================================================== */
+.screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  background: linear-gradient(180deg, var(--bg-cyan) 0%, var(--bg-lime) 100%);
+}
+
+.screen.hidden {
+  display: none;
+}
+
+/* Lobby Screen */
+.lobby-content {
+  text-align: center;
+  padding: 2rem;
+}
+
+.lobby-title {
+  font-size: 4rem;
+  color: var(--text-primary);
+  text-shadow:
+    4px 4px 0 var(--purple-dark),
+    0 0 40px var(--pink-hot);
+  margin-bottom: 0.5rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.lobby-subtitle {
+  font-size: 1.5rem;
+  color: var(--purple-light);
+  text-shadow: 2px 2px 0 #000;
+  margin-bottom: 3rem;
+}
+
+/* Player Slots */
+.player-slots {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+
+.player-slot {
+  background: rgba(0, 0, 0, 0.8);
+  border: 4px solid #444;
+  padding: 1.5rem 2rem;
+  min-width: 180px;
+  transition: all 0.3s;
+}
+
+.player-slot.joined {
+  border-color: var(--buzz-green);
+  box-shadow: 0 0 20px var(--buzz-green);
+}
+
+.slot-number {
+  font-size: 2rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.player-slot.joined .slot-number {
+  color: var(--buzz-green);
+}
+
+.slot-status {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.player-slot.joined .slot-status {
+  color: var(--buzz-green);
+}
+
+.lobby-instruction {
+  font-size: 1.25rem;
+  color: var(--cyan-glow);
+  text-shadow: 0 0 20px var(--cyan-glow);
+  margin-bottom: 1rem;
+}
+
+.lobby-hint {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+/* Game Over Screen */
+.game-over-screen {
+  background: linear-gradient(180deg, #1a0a2e 0%, #0a0a1a 100%);
+}
+
+.game-over-content {
+  text-align: center;
+  padding: 2rem;
+}
+
+.game-over-title {
+  font-size: 3.5rem;
+  color: var(--pink-hot);
+  text-shadow:
+    4px 4px 0 #000,
+    0 0 40px var(--pink-hot);
+  margin-bottom: 2rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.final-scores {
+  margin-bottom: 2rem;
+}
+
+.final-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 1rem 3rem;
+  margin-bottom: 0.5rem;
+  border: 3px solid #333;
+}
+
+.final-score-row.winner {
+  border-color: gold;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+}
+
+.rank {
+  font-size: 2rem;
+}
+
+.player-name {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.final-points {
+  font-size: 2rem;
+  color: var(--cyan-glow);
+  text-shadow: 0 0 15px var(--cyan-glow);
+}
+
+.game-over-stats {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.7rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  color: var(--orange-warm);
+}
+
+.play-again-btn {
+  background: linear-gradient(180deg, var(--buzz-green) 0%, #009933 100%);
+  border: none;
+  border-radius: 50px;
+  padding: 1.25rem 4rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow: 0 4px 0 #006622;
+  transition: transform 0.1s;
+  margin-bottom: 1rem;
+}
+
+.play-again-btn:hover {
+  transform: translateY(-2px);
+}
+
+.play-again-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #006622;
+}
+
+/* Animate blink for lobby */
+.animate-blink {
+  animation: blink 1s infinite;
+}
+
+/* =====================================================
+   TV MODE - Extra Large Fonts
+   ===================================================== */
+body.tv-mode {
+  --font-xs: 1.25rem;
+  --font-sm: 1.5rem;
+  --font-md: 2.5rem;
+  --font-lg: 3.5rem;
+  --font-xl: 5rem;
+}
+
+body.tv-mode .lobby-title {
+  font-size: 5rem;
+}
+
+body.tv-mode .player-slot {
+  min-width: 220px;
+  padding: 2rem 2.5rem;
+}
+
+body.tv-mode .answer-btn {
+  min-height: 90px;
+  font-size: 1.5rem;
+}

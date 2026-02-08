@@ -30,7 +30,27 @@ class GameRenderer {
             // Buttons
             submitBtn: document.getElementById('submit-btn'),
             hintBtn: document.getElementById('hint-btn'),
-            skipBtn: document.getElementById('skip-btn')
+            skipBtn: document.getElementById('skip-btn'),
+            playAgainBtn: document.getElementById('play-again-btn'),
+
+            // Screens
+            lobbyScreen: document.getElementById('lobby-screen'),
+            gameOverScreen: document.getElementById('game-over-screen'),
+            gameContainer: document.querySelector('.game-container'),
+
+            // Game over stats
+            finalScore: document.getElementById('final-score'),
+            statQuestions: document.getElementById('stat-questions'),
+            statCorrect: document.getElementById('stat-correct'),
+            statCombo: document.getElementById('stat-combo')
+        };
+
+        // Player slot elements
+        this.playerSlots = {
+            player1: document.getElementById('slot-p1'),
+            player2: document.getElementById('slot-p2'),
+            player3: document.getElementById('slot-p3'),
+            player4: document.getElementById('slot-p4')
         };
 
         // Answer button elements
@@ -38,6 +58,21 @@ class GameRenderer {
 
         // Current selection
         this.selectedAnswer = null;
+
+        // Game stats
+        this.stats = {
+            correctAnswers: 0,
+            totalQuestions: 0,
+            bestCombo: 0
+        };
+
+        // Current screen state
+        this.currentScreen = 'lobby'; // 'lobby', 'game', 'gameOver'
+
+        // Start sequence tracking (Blue → Orange → Green → Yellow)
+        this.startSequence = [];
+        this.requiredSequence = ['blue', 'orange', 'green', 'yellow'];
+        this.sequenceTimeout = null;
 
         this.init();
     }
@@ -54,8 +89,6 @@ class GameRenderer {
         // Load quiz
         try {
             await window.quizEngine.load('quiz.json');
-            this.displayQuestion(window.quizEngine.getCurrentQuestion());
-            this.updateProgress();
         } catch (error) {
             console.warn('[Renderer] Could not load quiz.json, using sample data');
             this.useSampleData();
@@ -64,17 +97,158 @@ class GameRenderer {
         // Update initial UI
         this.updateHiScore();
 
-        // Start game
-        window.gameState.setState(window.gameState.STATES.QUESTION_REVEAL);
+        // Show lobby screen
+        this.showScreen('lobby');
 
         console.log('[Renderer] Ready!');
+    }
+
+    /**
+     * Show a specific screen
+     */
+    showScreen(screen) {
+        this.currentScreen = screen;
+
+        // Hide all screens first
+        this.elements.lobbyScreen.classList.add('hidden');
+        this.elements.gameOverScreen.classList.add('hidden');
+        this.elements.gameContainer.style.display = 'none';
+
+        switch (screen) {
+            case 'lobby':
+                this.elements.lobbyScreen.classList.remove('hidden');
+                break;
+            case 'game':
+                this.elements.gameContainer.style.display = 'flex';
+                break;
+            case 'gameOver':
+                this.elements.gameOverScreen.classList.remove('hidden');
+                break;
+        }
+    }
+
+    /**
+     * Start the game
+     */
+    startGame() {
+        console.log('[Renderer] Starting game...');
+
+        // Reset stats
+        this.stats = {
+            correctAnswers: 0,
+            totalQuestions: window.quizEngine.totalQuestions,
+            bestCombo: 0
+        };
+
+        // Reset quiz
+        window.quizEngine.reset();
+        window.gameState.resetGame();
+
+        // Auto-join player 1 for single player
+        window.gameState.playerJoin('player1');
+
+        // Show game screen
+        this.showScreen('game');
+
+        // Display first question
+        this.displayQuestion(window.quizEngine.getCurrentQuestion());
+        this.updateProgress();
+        this.updateScore();
+
+        // Start the game
+        window.gameState.setState(window.gameState.STATES.QUESTION_REVEAL);
+    }
+
+    /**
+     * Player join in lobby
+     */
+    playerJoin(playerKey) {
+        if (this.currentScreen !== 'lobby') return;
+
+        const slot = this.playerSlots[playerKey];
+        if (slot && !slot.classList.contains('joined')) {
+            slot.classList.add('joined');
+            slot.querySelector('.slot-status').textContent = 'READY!';
+
+            window.gameState.playerJoin(playerKey);
+            console.log(`[Renderer] ${playerKey} joined!`);
+        }
+    }
+
+    /**
+     * Handle start sequence in lobby
+     * Requires pressing Blue → Orange → Green → Yellow to start
+     */
+    handleStartSequence(color) {
+        if (this.currentScreen !== 'lobby') return;
+
+        // Check if at least one player has joined
+        const joinedCount = document.querySelectorAll('.player-slot.joined').length;
+        if (joinedCount === 0) {
+            console.log('[Renderer] No players joined yet!');
+            return;
+        }
+
+        // Add to sequence
+        this.startSequence.push(color);
+        console.log(`[Renderer] Start sequence: ${this.startSequence.join(' → ')}`);
+
+        // Update visual feedback
+        this.updateSequenceDisplay();
+
+        // Clear sequence after timeout (2 seconds of inactivity)
+        if (this.sequenceTimeout) {
+            clearTimeout(this.sequenceTimeout);
+        }
+        this.sequenceTimeout = setTimeout(() => {
+            this.startSequence = [];
+            this.updateSequenceDisplay();
+        }, 2000);
+
+        // Check if sequence matches
+        const currentLength = this.startSequence.length;
+        const expectedColor = this.requiredSequence[currentLength - 1];
+
+        if (color !== expectedColor) {
+            // Wrong color, reset sequence
+            this.startSequence = [];
+            this.updateSequenceDisplay();
+            return;
+        }
+
+        // Check if complete
+        if (this.startSequence.length === this.requiredSequence.length) {
+            console.log('[Renderer] Start sequence complete!');
+            this.startSequence = [];
+            this.startGame();
+        }
+    }
+
+    /**
+     * Update visual display of sequence progress
+     */
+    updateSequenceDisplay() {
+        const instruction = document.querySelector('.lobby-instruction');
+        if (!instruction) return;
+
+        const joinedCount = document.querySelectorAll('.player-slot.joined').length;
+
+        if (joinedCount === 0) {
+            instruction.textContent = 'PRESS 🔴 RED BUZZER TO JOIN';
+        } else if (this.startSequence.length === 0) {
+            instruction.innerHTML = 'TO START: 🔵→🟠→🟢→🟡';
+        } else {
+            const icons = ['🔵', '🟠', '🟢', '🟡'];
+            const progress = this.startSequence.map((_, i) => `<span style="opacity:0.3">${icons[i]}</span>`).join('');
+            const remaining = icons.slice(this.startSequence.length).join('→');
+            instruction.innerHTML = `${progress} ${remaining}`;
+        }
     }
 
     /**
      * Use sample data if quiz.json doesn't exist
      */
     useSampleData() {
-        // Sample question data for testing
         const sampleQuiz = {
             quizTitle: "Retro Arcade Trivia",
             questions: [
@@ -96,9 +270,6 @@ class GameRenderer {
         window.quizEngine.quiz = sampleQuiz;
         window.quizEngine.questions = sampleQuiz.questions;
         window.quizEngine.totalQuestions = sampleQuiz.questions.length;
-
-        this.displayQuestion(window.quizEngine.getCurrentQuestion());
-        this.updateProgress();
     }
 
     /**
@@ -109,6 +280,12 @@ class GameRenderer {
 
         // Clear selection
         this.clearSelection();
+
+        // Make sure answer buttons are visible
+        this.answerButtons.forEach(btn => {
+            btn.style.visibility = 'visible';
+            btn.style.opacity = '1';
+        });
 
         // Update question text with animation
         this.elements.questionText.classList.add('animate-slide-in');
@@ -153,6 +330,8 @@ class GameRenderer {
      * Handle answer selection
      */
     selectAnswer(color) {
+        if (this.currentScreen !== 'game') return;
+
         // Clear previous selection
         this.clearSelection();
 
@@ -186,6 +365,8 @@ class GameRenderer {
      * Submit the current answer
      */
     submitAnswer() {
+        if (this.currentScreen !== 'game') return;
+
         if (!this.selectedAnswer) {
             // Visual feedback - shake submit button
             this.elements.submitBtn.classList.add('animate-shake');
@@ -199,8 +380,15 @@ class GameRenderer {
         const result = window.quizEngine.checkAnswer(this.selectedAnswer);
 
         if (result.correct) {
+            this.stats.correctAnswers++;
             this.showCorrectFeedback(this.selectedAnswer);
             window.gameState.verifyAnswer(true, result.points);
+
+            // Track best combo
+            const currentCombo = window.gameState.getCombo('player1');
+            if (currentCombo > this.stats.bestCombo) {
+                this.stats.bestCombo = currentCombo;
+            }
         } else {
             this.showWrongFeedback(this.selectedAnswer, result.correctAnswer);
             window.gameState.verifyAnswer(false, 0);
@@ -305,14 +493,33 @@ class GameRenderer {
      */
     showGameOver() {
         window.gameState.setState(window.gameState.STATES.GAME_OVER);
+        window.gameState.saveHiScore();
 
-        this.elements.questionText.textContent = '🎮 GAME OVER! 🎮';
-        this.elements.questionText.classList.add('animate-big-pulse');
+        // Update final score display
+        const finalScore = window.gameState.getScore('player1');
+        this.elements.finalScore.textContent = finalScore.toLocaleString();
 
-        // Hide answer buttons
-        this.answerButtons.forEach(btn => {
-            btn.style.visibility = 'hidden';
+        // Update stats
+        this.elements.statQuestions.textContent = this.stats.totalQuestions;
+        this.elements.statCorrect.textContent = this.stats.correctAnswers;
+        this.elements.statCombo.textContent = `x${Math.max(1, this.stats.bestCombo)}`;
+
+        // Show game over screen
+        this.showScreen('gameOver');
+    }
+
+    /**
+     * Restart game
+     */
+    restartGame() {
+        // Reset player slots
+        Object.values(this.playerSlots).forEach(slot => {
+            slot.classList.remove('joined');
+            slot.querySelector('.slot-status').textContent = 'Press 🔴 to join';
         });
+
+        // Go back to lobby
+        this.showScreen('lobby');
     }
 
     // ====================
@@ -333,10 +540,16 @@ class GameRenderer {
             this.submitAnswer();
         });
 
+        // Play again button
+        if (this.elements.playAgainBtn) {
+            this.elements.playAgainBtn.addEventListener('click', () => {
+                this.restartGame();
+            });
+        }
+
         // Hint button
         this.elements.hintBtn.addEventListener('click', () => {
             console.log('[Renderer] Hint requested');
-            // TODO: Implement hint logic
         });
 
         // Skip button
@@ -352,6 +565,34 @@ class GameRenderer {
 
     setupKeyboardListeners() {
         document.addEventListener('keydown', (e) => {
+            // Handle lobby screen
+            if (this.currentScreen === 'lobby') {
+                // J = Join as player 1
+                if (e.key.toLowerCase() === 'j') {
+                    this.playerJoin('player1');
+                    return;
+                }
+                // Color keys for start sequence
+                const keyMap = {
+                    'b': 'blue', '1': 'blue', 'o': 'orange', '2': 'orange',
+                    'g': 'green', '3': 'green', 'y': 'yellow', '4': 'yellow'
+                };
+                const color = keyMap[e.key.toLowerCase()];
+                if (color) {
+                    this.handleStartSequence(color);
+                }
+                return;
+            }
+
+            if (this.currentScreen === 'gameOver') {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.restartGame();
+                }
+                return;
+            }
+
+            // Game controls
             switch (e.key.toLowerCase()) {
                 case '1':
                 case 'b':
@@ -371,14 +612,22 @@ class GameRenderer {
                     break;
                 case 'enter':
                 case ' ':
+                    e.preventDefault();
                     this.submitAnswer();
                     break;
-                case 'f11':
-                    e.preventDefault();
-                    if (window.electronAPI) {
-                        window.electronAPI.toggleFullscreen();
-                    }
-                    break;
+            }
+
+            // Fullscreen toggle (works on all screens)
+            if (e.key === 'F11') {
+                e.preventDefault();
+                if (window.electronAPI) {
+                    window.electronAPI.toggleFullscreen();
+                }
+            }
+
+            // TV mode toggle
+            if (e.key === 't' && e.ctrlKey) {
+                document.body.classList.toggle('tv-mode');
             }
         });
     }
@@ -389,7 +638,6 @@ class GameRenderer {
         });
 
         window.gameState.on('timeUp', () => {
-            // Auto-submit or show time up
             this.elements.questionText.textContent = "⏰ TIME'S UP!";
         });
     }
@@ -398,12 +646,29 @@ class GameRenderer {
         window.gamepadManager.on('buttonPress', ({ player, color }) => {
             console.log(`[Renderer] Gamepad: ${player} pressed ${color}`);
 
-            // Map color buttons to answer selection
+            // Handle lobby
+            if (this.currentScreen === 'lobby') {
+                if (color === 'red') {
+                    this.playerJoin(player);
+                } else if (['blue', 'orange', 'green', 'yellow'].includes(color)) {
+                    this.handleStartSequence(color);
+                }
+                return;
+            }
+
+            // Handle game over
+            if (this.currentScreen === 'gameOver') {
+                if (color === 'red') {
+                    this.restartGame();
+                }
+                return;
+            }
+
+            // Game controls
             if (['blue', 'orange', 'green', 'yellow'].includes(color)) {
                 this.selectAnswer(color);
             }
 
-            // Red button = submit
             if (color === 'red') {
                 this.submitAnswer();
             }
