@@ -1,125 +1,245 @@
 {
-    "quizTitle": "Retro Arcade Trivia",
+    "quizTitle": "Pop Culture Trivia Night",
     "questions": [
         {
             "id": 1,
-            "question": "What was the most popular arcade game of 1982?",
+            "question": "In 'Frozen', what is the name of Elsa's sister?",
             "answers": {
-                "blue": "Pac-Man",
-                "orange": "Donkey Kong",
-                "green": "Space Invaders",
-                "yellow": "Galaga"
+                "blue": "Anna",
+                "orange": "Olaf",
+                "green": "Kristoff",
+                "yellow": "Sven"
             },
             "correct": "blue",
             "points": 100
         },
         {
             "id": 2,
-            "question": "Which company created the NES (Nintendo Entertainment System)?",
+            "question": "In Minecraft, what do you need to make a Nether Portal?",
             "answers": {
-                "blue": "Sega",
-                "orange": "Atari",
-                "green": "Nintendo",
-                "yellow": "Sony"
+                "blue": "Diamond blocks",
+                "orange": "Obsidian",
+                "green": "Bedrock",
+                "yellow": "Emerald blocks"
+            },
+            "correct": "orange",
+            "points": 100
+        },
+        {
+            "id": 3,
+            "question": "Who plays Iron Man in the Marvel Cinematic Universe?",
+            "answers": {
+                "blue": "Chris Evans",
+                "orange": "Chris Hemsworth",
+                "green": "Robert Downey Jr.",
+                "yellow": "Mark Ruffalo"
             },
             "correct": "green",
             "points": 100
         },
         {
-            "id": 3,
-            "question": "What is the capital of Indiana?",
-            "answers": {
-                "blue": "Indianapolis",
-                "orange": "Lawrenceburg",
-                "green": "Bloomington",
-                "yellow": "Fort Wayne"
-            },
-            "correct": "blue",
-            "points": 100
-        },
-        {
             "id": 4,
-            "question": "In what year was the first Star Wars movie released?",
+            "question": "In 'Pride and Prejudice', who does Elizabeth Bennet marry?",
             "answers": {
-                "blue": "1975",
-                "orange": "1977",
-                "green": "1979",
-                "yellow": "1980"
+                "blue": "Mr. Bingley",
+                "orange": "Mr. Darcy",
+                "green": "Mr. Wickham",
+                "yellow": "Mr. Collins"
             },
             "correct": "orange",
             "points": 100
         },
         {
             "id": 5,
-            "question": "What is the highest-grossing arcade game of all time?",
+            "question": "What is the name of Frodo's home in 'The Lord of the Rings'?",
             "answers": {
-                "blue": "Street Fighter II",
-                "orange": "Space Invaders",
-                "green": "Pac-Man",
-                "yellow": "Donkey Kong"
+                "blue": "Rivendell",
+                "orange": "The Shire",
+                "green": "Mordor",
+                "yellow": "Gondor"
+            },
+            "correct": "orange",
+            "points": 100
+        },
+        {
+            "id": 6,
+            "question": "In 'Moana', what is the name of the demigod who helps her?",
+            "answers": {
+                "blue": "Tamatoa",
+                "orange": "Te Fiti",
+                "green": "Maui",
+                "yellow": "Tui"
+            },
+            "correct": "green",
+            "points": 100
+        },
+        {
+            "id": 7,
+            "question": "In Fortnite, what is the main objective in Battle Royale?",
+            "answers": {
+                "blue": "Build the tallest tower",
+                "orange": "Collect the most coins",
+                "green": "Be the last player standing",
+                "yellow": "Complete all quests"
+            },
+            "correct": "green",
+            "points": 100
+        },
+        {
+            "id": 8,
+            "question": "Which Infinity Stone is hidden on Vormir in 'Avengers: Endgame'?",
+            "answers": {
+                "blue": "Time Stone",
+                "orange": "Soul Stone",
+                "green": "Power Stone",
+                "yellow": "Mind Stone"
+            },
+            "correct": "orange",
+            "points": 150
+        },
+        {
+            "id": 9,
+            "question": "In 'Sense and Sensibility', what are the names of the two Dashwood sisters?",
+            "answers": {
+                "blue": "Emma and Jane",
+                "orange": "Elizabeth and Jane",
+                "green": "Elinor and Marianne",
+                "yellow": "Catherine and Lydia"
             },
             "correct": "green",
             "points": 150
         },
         {
-            "id": 6,
-            "question": "Which planet is known as the Red Planet?",
+            "id": 10,
+            "question": "What is the name of Gandalf's sword in 'The Lord of the Rings'?",
             "answers": {
-                "blue": "Venus",
-                "orange": "Mars",
-                "green": "Jupiter",
-                "yellow": "Saturn"
+                "blue": "Sting",
+                "orange": "Andúril",
+                "green": "Glamdring",
+                "yellow": "Orcrist"
+            },
+            "correct": "green",
+            "points": 150
+        },
+        {
+            "id": 11,
+            "question": "In 'Tangled', what is Rapunzel's chameleon named?",
+            "answers": {
+                "blue": "Maximus",
+                "orange": "Flynn",
+                "green": "Pascal",
+                "yellow": "Mother Gothel"
+            },
+            "correct": "green",
+            "points": 100
+        },
+        {
+            "id": 12,
+            "question": "What game features characters like Mario, Link, and Pikachu fighting each other?",
+            "answers": {
+                "blue": "Mario Kart",
+                "orange": "Super Smash Bros",
+                "green": "Pokémon",
+                "yellow": "Zelda"
             },
             "correct": "orange",
             "points": 100
         },
         {
-            "id": 7,
-            "question": "What does CPU stand for?",
+            "id": 13,
+            "question": "What is Thor's hammer called in the MCU?",
             "answers": {
-                "blue": "Central Processing Unit",
-                "orange": "Computer Personal Unit",
-                "green": "Central Program Utility",
-                "yellow": "Core Processing Unit"
+                "blue": "Stormbreaker",
+                "orange": "Gungnir",
+                "green": "Mjolnir",
+                "yellow": "Hofund"
+            },
+            "correct": "green",
+            "points": 100
+        },
+        {
+            "id": 14,
+            "question": "In 'Emma', who does Emma Woodhouse eventually marry?",
+            "answers": {
+                "blue": "Frank Churchill",
+                "orange": "Mr. Elton",
+                "green": "Robert Martin",
+                "yellow": "Mr. Knightley"
+            },
+            "correct": "yellow",
+            "points": 150
+        },
+        {
+            "id": 15,
+            "question": "What is the name of the volcano where the One Ring must be destroyed?",
+            "answers": {
+                "blue": "Mount Doom",
+                "orange": "Isengard",
+                "green": "Minas Tirith",
+                "yellow": "Moria"
             },
             "correct": "blue",
             "points": 100
         },
         {
-            "id": 8,
-            "question": "Who painted the Mona Lisa?",
+            "id": 16,
+            "question": "In 'Encanto', what is Mirabel's magical gift?",
             "answers": {
-                "blue": "Vincent van Gogh",
-                "orange": "Pablo Picasso",
-                "green": "Michelangelo",
-                "yellow": "Leonardo da Vinci"
+                "blue": "Super strength",
+                "orange": "She can shapeshift",
+                "green": "She has no gift",
+                "yellow": "She can see the future"
+            },
+            "correct": "green",
+            "points": 100
+        },
+        {
+            "id": 17,
+            "question": "In Roblox, what is the main currency called?",
+            "answers": {
+                "blue": "V-Bucks",
+                "orange": "Robux",
+                "green": "Coins",
+                "yellow": "Gems"
+            },
+            "correct": "orange",
+            "points": 100
+        },
+        {
+            "id": 18,
+            "question": "Who snaps their fingers to defeat Thanos at the end of 'Avengers: Endgame'?",
+            "answers": {
+                "blue": "Thor",
+                "orange": "Captain America",
+                "green": "Hulk",
+                "yellow": "Iron Man"
             },
             "correct": "yellow",
             "points": 100
         },
         {
-            "id": 9,
-            "question": "What year did the Atari 2600 launch in North America?",
+            "id": 19,
+            "question": "How many Bennet sisters are there in 'Pride and Prejudice'?",
             "answers": {
-                "blue": "1975",
-                "orange": "1977",
-                "green": "1979",
-                "yellow": "1980"
+                "blue": "Three",
+                "orange": "Four",
+                "green": "Five",
+                "yellow": "Six"
             },
-            "correct": "orange",
-            "points": 150
+            "correct": "green",
+            "points": 100
         },
         {
-            "id": 10,
-            "question": "Which chemical element has the symbol 'O'?",
+            "id": 20,
+            "question": "In 'Lilo & Stitch', what is Stitch's experiment number?",
             "answers": {
-                "blue": "Gold",
-                "orange": "Oxygen",
-                "green": "Osmium",
-                "yellow": "Oganesson"
+                "blue": "626",
+                "orange": "221",
+                "green": "007",
+                "yellow": "404"
             },
-            "correct": "orange",
-            "points": 100
+            "correct": "blue",
+            "points": 150
         }
     ]
 }

@@ -88,6 +88,22 @@ class GameRenderer {
             player4: document.getElementById('slot-p4')
         };
 
+        // Player name inputs (lobby)
+        this.nameInputs = {
+            player1: document.getElementById('name-p1'),
+            player2: document.getElementById('name-p2'),
+            player3: document.getElementById('name-p3'),
+            player4: document.getElementById('name-p4')
+        };
+
+        // Player label elements in HUD
+        this.playerLabels = {
+            player1: document.querySelector('#scorebox-p1 .player-label'),
+            player2: document.querySelector('#scorebox-p2 .player-label'),
+            player3: document.querySelector('#scorebox-p3 .player-label'),
+            player4: document.querySelector('#scorebox-p4 .player-label')
+        };
+
         // Answer button elements
         this.answerButtons = document.querySelectorAll('.answer-btn');
 
@@ -164,6 +180,20 @@ class GameRenderer {
 
     // ==================== GAME FLOW ====================
 
+    getPlayerName(playerKey) {
+        const input = this.nameInputs[playerKey];
+        const defaultName = `P${playerKey.replace('player', '')}`;
+        return input && input.value.trim() ? input.value.trim() : defaultName;
+    }
+
+    updateHUDLabels() {
+        Object.entries(this.playerLabels).forEach(([key, label]) => {
+            if (label) {
+                label.textContent = this.getPlayerName(key);
+            }
+        });
+    }
+
     startGame() {
         console.log('[Renderer] Starting game...');
 
@@ -184,6 +214,7 @@ class GameRenderer {
         });
 
         this.showScreen('game');
+        this.updateHUDLabels();  // Set player names in HUD
         this.displayQuestion(window.quizEngine.getCurrentQuestion());
         this.updateProgress();
         this.updateAllScores();
@@ -332,8 +363,8 @@ class GameRenderer {
     // ==================== FIRST BUZZ BANNER ====================
 
     showFirstBuzzBanner(playerKey) {
-        const playerNum = playerKey.replace('player', '');
-        this.elements.firstBuzzText.textContent = `P${playerNum} BUZZED FIRST!`;
+        const playerName = this.getPlayerName(playerKey);
+        this.elements.firstBuzzText.textContent = `${playerName} BUZZED FIRST!`;
         this.elements.firstBuzzBanner.classList.remove('hidden');
     }
 
@@ -539,7 +570,7 @@ class GameRenderer {
             } else {
                 this.showGameOver();
             }
-        }, 2000);
+        }, 4000);  // 4 seconds to see the correct answer
     }
 
     // ==================== COUNTDOWN ====================
@@ -602,12 +633,12 @@ class GameRenderer {
 
         const scoresHTML = sorted.map((player, index) => {
             const rank = index === 0 ? '🏆' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index + 1}`));
-            const playerNum = player.key.replace('player', '');
+            const playerName = this.getPlayerName(player.key);
             const winnerClass = index === 0 ? 'winner' : '';
             return `
                 <div class="final-score-row ${winnerClass}">
                     <span class="rank">${rank}</span>
-                    <span class="player-name">PLAYER ${playerNum}</span>
+                    <span class="player-name">${playerName}</span>
                     <span class="final-points">${player.score.toLocaleString()}</span>
                 </div>
             `;
