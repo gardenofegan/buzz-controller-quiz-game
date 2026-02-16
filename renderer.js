@@ -23,8 +23,6 @@ class GameRenderer {
             timer: document.getElementById('timer'),
 
             // First buzz banner
-            firstBuzzBanner: document.getElementById('first-buzz-banner'),
-            firstBuzzText: document.getElementById('first-buzz-text'),
 
             // Lock-in status
             lockinStatus: document.getElementById('lockin-status'),
@@ -218,7 +216,6 @@ class GameRenderer {
         this.displayQuestion(window.quizEngine.getCurrentQuestion());
         this.updateProgress();
         this.updateAllScores();
-        this.hideFirstBuzzBanner();
 
         window.gameState.setState(window.gameState.STATES.QUESTION_REVEAL);
     }
@@ -331,7 +328,6 @@ class GameRenderer {
 
     updatePlayerStatuses() {
         const joined = window.gameState.getJoinedPlayers();
-        const firstBuzz = window.gameState.round.firstBuzzPlayer;
 
         joined.forEach(player => {
             const statusEl = this.statusDisplays[player.key];
@@ -352,27 +348,10 @@ class GameRenderer {
             } else {
                 statusEl.textContent = '';
             }
-
-            // First buzz indicator
-            if (player.key === firstBuzz) {
-                statusEl.classList.add('first-buzz');
-            }
         });
     }
 
-    // ==================== FIRST BUZZ BANNER ====================
 
-    showFirstBuzzBanner(playerKey) {
-        const playerName = this.getPlayerName(playerKey);
-        this.elements.firstBuzzText.textContent = `${playerName} BUZZED FIRST!`;
-        this.elements.firstBuzzBanner.classList.remove('hidden');
-    }
-
-    hideFirstBuzzBanner() {
-        this.elements.firstBuzzBanner.classList.add('hidden');
-    }
-
-    // ==================== QUESTION DISPLAY ====================
 
     displayQuestion(question) {
         if (!question) return;
@@ -380,7 +359,6 @@ class GameRenderer {
         this.currentQuestion = question;
         this.clearAllPlayerIndicators();
         this.clearAnswerStates();
-        this.hideFirstBuzzBanner();
         this.resetPlayerStatuses();
 
         // LED: Turn off all LEDs at start of each question
@@ -442,14 +420,7 @@ class GameRenderer {
 
     // ==================== ANSWER HANDLING (MULTIPLAYER) ====================
 
-    buzzIn(playerKey) {
-        if (this.currentScreen !== 'game') return;
-
-        const success = window.gameState.buzzIn(playerKey);
-        if (success) {
-            this.updatePlayerStatuses();
-        }
-    }
+    // buzzIn is no longer used - all questions are open to everyone
 
     selectAnswer(playerKey, color) {
         if (this.currentScreen !== 'game') return;
@@ -486,7 +457,6 @@ class GameRenderer {
         this.clearAllPlayerIndicators();
 
         const selections = window.gameState.getPlayerSelections();
-        const firstBuzz = window.gameState.round.firstBuzzPlayer;
 
         for (const [playerKey, data] of Object.entries(selections)) {
             const row = this.playerIndicatorRows[data.color];
@@ -498,9 +468,6 @@ class GameRenderer {
 
                 if (data.lockedIn) {
                     indicator.classList.add('locked');
-                }
-                if (playerKey === firstBuzz) {
-                    indicator.classList.add('first-buzz');
                 }
 
                 row.appendChild(indicator);
@@ -765,17 +732,6 @@ class GameRenderer {
         window.gameState.on('timeUp', () => {
             this.revealAnswer();
         });
-
-        window.gameState.on('firstBuzz', ({ player }) => {
-            console.log(`[Renderer] 🔔 First buzz: ${player}`);
-            this.showFirstBuzzBanner(player);
-
-            // LED: Flash the buzzer who buzzed in first
-            const playerNum = parseInt(player.replace('player', ''));
-            if (window.electronAPI?.led) {
-                window.electronAPI.led.flash(playerNum, 3, 150);
-            }
-        });
     }
 
     setupGamepadListeners() {
@@ -803,15 +759,11 @@ class GameRenderer {
                 this.selectAnswer(player, color);
             }
 
-            // Red = buzz in first, OR lock in if already selected
+            // Red = lock in answer
             if (color === 'red') {
                 const playerData = window.gameState.players[player];
                 if (playerData && playerData.selection) {
-                    // Already has selection, lock it in
                     this.lockInAnswer(player);
-                } else {
-                    // No selection yet, this is a buzz-in
-                    this.buzzIn(player);
                 }
             }
         });

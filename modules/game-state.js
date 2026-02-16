@@ -22,26 +22,24 @@ class GameState {
 
         // Player data
         this.players = {
-            player1: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false },
-            player2: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false },
-            player3: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false },
-            player4: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false }
+            player1: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false, lockInTime: null },
+            player2: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false, lockInTime: null },
+            player3: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false, lockInTime: null },
+            player4: { joined: false, score: 0, lives: 3, combo: 0, selection: null, lockedIn: false, lockInTime: null }
         };
 
         // Game settings
         this.settings = {
             timePerQuestion: 30,       // seconds
-            buzzInBonus: 50,           // Extra points for first correct buzz-in
-            buzzInPenalty: 50,         // Points lost for wrong first buzz-in
             pointsCorrect: 100,
+            speedBonusMax: 100,        // Max extra points for fastest lock-in
             pointsWrong: 0,
             comboMultiplier: true
         };
 
         // Current round data
         this.round = {
-            firstBuzzPlayer: null,     // Who buzzed in first
-            firstBuzzTime: null,       // When they buzzed
+            timerStartTime: null,      // When the timer started (for speed calc)
             timerValue: 30,
             timerInterval: null,
             correctAnswer: null        // Set when question is shown
@@ -119,29 +117,8 @@ class GameState {
         return this.getJoinedPlayers().length;
     }
 
-    /**
-     * Player buzzes in (presses red button to claim the question)
-     */
-    buzzIn(playerKey) {
-        if (this.currentState !== this.STATES.ANSWERING &&
-            this.currentState !== this.STATES.QUESTION_REVEAL) {
-            return false;
-        }
-
-        const player = this.players[playerKey];
-        if (!player || !player.joined) return false;
-
-        // Track first buzz-in
-        if (!this.round.firstBuzzPlayer) {
-            this.round.firstBuzzPlayer = playerKey;
-            this.round.firstBuzzTime = Date.now();
-            console.log(`[GameState] 🔔 ${playerKey} BUZZED IN FIRST!`);
-            this.emit('firstBuzz', { player: playerKey });
-            return true;
-        }
-
-        return false; // Someone already buzzed
-    }
+    // buzzIn is no longer used - all questions are open to everyone.
+    // Red button now directly locks in the selected answer.
 
     /**
      * Handle answer selection (player picks a color)
@@ -179,6 +156,7 @@ class GameState {
         if (player.lockedIn) return false; // Already locked
 
         player.lockedIn = true;
+        player.lockInTime = Date.now();
 
         console.log(`[GameState] ${playerKey} LOCKED IN: ${player.selection}`);
         this.emit('answerLockedIn', { player: playerKey, color: player.selection });
@@ -217,25 +195,33 @@ class GameState {
 
     /**
      * Verify all answers and award points
+     * Speed bonus: faster lock-in = more bonus points
      */
     verifyAllAnswers(correctColor) {
         this.round.correctAnswer = correctColor;
         const results = [];
+        const totalTimeMs = this.settings.timePerQuestion * 1000;
 
         for (const [playerKey, player] of Object.entries(this.players)) {
             if (!player.joined) continue;
 
             const isCorrect = player.selection === correctColor;
-            const isFirstBuzz = this.round.firstBuzzPlayer === playerKey;
 
             let pointsEarned = 0;
-            let bonusApplied = false;
-            let penaltyApplied = false;
+            let speedBonus = 0;
 
             if (player.selection) {
                 if (isCorrect) {
                     // Base points
                     pointsEarned = this.settings.pointsCorrect;
+
+                    // Speed bonus based on how fast they locked in
+                    if (player.lockInTime && this.round.timerStartTime) {
+                        const elapsedMs = player.lockInTime - this.round.timerStartTime;
+                        const remainingRatio = Math.max(0, 1 - (elapsedMs / totalTimeMs));
+                        speedBonus = Math.round(remainingRatio * this.settings.speedBonusMax);
+                        pointsEarned += speedBonus;
+                    }
 
                     // Combo multiplier
                     player.combo++;
@@ -243,23 +229,10 @@ class GameState {
                         Math.min(player.combo, 5) : 1;
                     pointsEarned *= multiplier;
 
-                    // First buzz bonus
-                    if (isFirstBuzz) {
-                        pointsEarned += this.settings.buzzInBonus;
-                        bonusApplied = true;
-                    }
-
                     player.score += pointsEarned;
                 } else {
-                    // Wrong answer
+                    // Wrong answer — no points, reset combo
                     player.combo = 0;
-
-                    // First buzz penalty
-                    if (isFirstBuzz) {
-                        pointsEarned = -this.settings.buzzInPenalty;
-                        player.score = Math.max(0, player.score + pointsEarned);
-                        penaltyApplied = true;
-                    }
                 }
             } else {
                 // Didn't answer
@@ -270,10 +243,8 @@ class GameState {
                 player: playerKey,
                 selection: player.selection,
                 isCorrect,
-                isFirstBuzz,
                 pointsEarned,
-                bonusApplied,
-                penaltyApplied,
+                speedBonus,
                 newScore: player.score,
                 combo: player.combo
             });
@@ -290,6 +261,7 @@ class GameState {
      */
     startTimer() {
         this.round.timerValue = this.settings.timePerQuestion;
+        this.round.timerStartTime = Date.now();
         this.emit('timerUpdate', { value: this.round.timerValue });
 
         this.round.timerInterval = setInterval(() => {
@@ -314,13 +286,13 @@ class GameState {
      * Reset round selections (keep timer running)
      */
     resetRoundSelections() {
-        this.round.firstBuzzPlayer = null;
-        this.round.firstBuzzTime = null;
         this.round.correctAnswer = null;
+        this.round.timerStartTime = null;
 
         for (const player of Object.values(this.players)) {
             player.selection = null;
             player.lockedIn = false;
+            player.lockInTime = null;
         }
     }
 
@@ -375,6 +347,7 @@ class GameState {
     resetGame() {
         for (const player of Object.values(this.players)) {
             player.score = 0;
+            player.lockInTime = null;
             player.lives = 3;
             player.combo = 0;
             player.selection = null;
